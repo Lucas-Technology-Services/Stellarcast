@@ -1,9 +1,12 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { CirclePlay, ChevronDown } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
+import { createPodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
 import {
   PageWrapper,
   BackgroundOverlay,
@@ -13,7 +16,6 @@ import {
   LogoText,
   Nav,
   NavAvatar,
-  NavCta,
   PageContent,
   TitleSection,
   TitleIconWrapper,
@@ -37,27 +39,55 @@ import {
   PublishButton,
 } from './styles'
 
-const PRIMARY_CATEGORIES = ['Technology', 'Science', 'Business', 'True Crime', 'Comedy', 'Etc']
-const EXTRA_CATEGORIES = ['Technology', 'Hoploy', 'Guity', 'Nuport', 'Homith', 'Apppre', 'Stante']
-
 interface FormState {
   title: string
   description: string
   category: string
   coverUrl: string
   coverPreview: string | null
+  coverFile: File | null
 }
 
 export default function CreatePodcast() {
+  const router = useRouter()
+  const { token, user, isLoading } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showExtra, setShowExtra] = useState(false)
+  const [categories, setCategories] = useState<PodcastCategory[]>([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>({
     title: '',
     description: '',
-    category: 'Technology',
+    category: '',
     coverUrl: '',
     coverPreview: null,
+    coverFile: null,
   })
+
+  useEffect(() => {
+    if (!isLoading && !token) {
+      router.push('/login')
+    }
+  }, [token, isLoading, router])
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const cats = await fetchCategories()
+        if (cancelled) return
+        setCategories(cats)
+        if (cats.length > 0) {
+          setForm((prev) => prev.category ? prev : { ...prev, category: cats[0].name })
+        }
+      } catch {
+        if (!cancelled) setCategories([])
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   function handleCategorySelect(cat: string) {
     setForm((prev) => ({ ...prev, category: cat }))
@@ -65,27 +95,62 @@ export default function CreatePodcast() {
 
   function handleCoverUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
     const url = e.target.value
-    setForm((prev) => ({ ...prev, coverUrl: url, coverPreview: url || null }))
+    setForm((prev) => ({ ...prev, coverUrl: url, coverPreview: url || null, coverFile: null }))
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const objectUrl = URL.createObjectURL(file)
-    setForm((prev) => ({ ...prev, coverPreview: objectUrl, coverUrl: '' }))
+    setForm((prev) => ({ ...prev, coverPreview: objectUrl, coverUrl: '', coverFile: file }))
+  }
+
+  async function savePodcast() {
+    if (!token) return
+    setError('')
+    setSaving(true)
+    try {
+      const podcast = await createPodcast(
+        {
+          title: form.title,
+          description: form.description || undefined,
+          category_name: form.category || undefined,
+          cover_image_url: form.coverUrl || undefined,
+        },
+        token,
+      )
+
+      if (form.coverFile) {
+        await uploadPodcastCover(podcast.title, form.coverFile, token)
+      }
+
+      router.push(`/podcasts/${encodeURIComponent(podcast.title)}/episodes`)
+    } catch (err) {
+      setError(err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'Failed to save podcast')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleSaveAsDraft() {
-    console.log('Save as draft:', form)
+    savePodcast()
   }
 
   function handlePublish() {
-    console.log('Publish podcast:', form)
+    savePodcast()
   }
 
-  const allCategories = showExtra
-    ? [...PRIMARY_CATEGORIES, ...EXTRA_CATEGORIES]
-    : PRIMARY_CATEGORIES
+  const allCategories = showExtra ? categories : categories.slice(0, 6)
+
+  if (isLoading || !token) {
+    return (
+      <PageWrapper>
+        <PageContent style={{ justifyContent: 'center', minHeight: '60vh' }}>
+          <p style={{ color: '#94a3b8' }}>Loading...</p>
+        </PageContent>
+      </PageWrapper>
+    )
+  }
 
   return (
     <PageWrapper>
@@ -99,11 +164,26 @@ export default function CreatePodcast() {
           </LogoWrapper>
         </Link>
         <Nav>
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#my-podcasts">My Podcasts</a>
-          <NavAvatar aria-label="User profile" />
-          <NavCta href="#">Get Started</NavCta>
+          <Link href="/podcasts/mine">My Podcasts</Link>
+          <NavAvatar
+            as="div"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+              border: '2px solid rgba(167, 139, 250, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 700,
+            }}
+            title={user?.email || 'User'}
+          >
+            {user?.email?.charAt(0).toUpperCase() || 'U'}
+          </NavAvatar>
         </Nav>
       </Header>
 
@@ -114,6 +194,23 @@ export default function CreatePodcast() {
           </TitleIconWrapper>
           <PageTitle>Create New Podcast</PageTitle>
         </TitleSection>
+
+        {error && (
+          <div
+            style={{
+              width: '100%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: 8,
+              padding: '10px 14px',
+              color: '#fca5a5',
+              fontSize: 13,
+              marginBottom: 16,
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <FormCard>
           <FieldGroup>
@@ -142,24 +239,29 @@ export default function CreatePodcast() {
             <CategoryTagsWrapper>
               {allCategories.map((cat) => (
                 <CategoryTag
-                  key={cat + (showExtra ? '-extra' : '')}
+                  key={cat.name}
                   type="button"
-                  $active={form.category === cat}
-                  onClick={() => handleCategorySelect(cat)}
+                  $active={form.category === cat.name}
+                  onClick={() => handleCategorySelect(cat.name)}
                 >
-                  {cat}
+                  {cat.name}
                 </CategoryTag>
               ))}
-              <ExpandCategoriesButton
-                type="button"
-                onClick={() => setShowExtra((v) => !v)}
-                aria-label={showExtra ? 'Show fewer categories' : 'Show more categories'}
-              >
-                <ChevronDown
-                  size={16}
-                  style={{ transform: showExtra ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                />
-              </ExpandCategoriesButton>
+              {categories.length > 6 && (
+                <ExpandCategoriesButton
+                  type="button"
+                  onClick={() => setShowExtra((v) => !v)}
+                  aria-label={showExtra ? 'Show fewer categories' : 'Show more categories'}
+                >
+                  <ChevronDown
+                    size={16}
+                    style={{
+                      transform: showExtra ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}
+                  />
+                </ExpandCategoriesButton>
+              )}
             </CategoryTagsWrapper>
           </FieldGroup>
 
@@ -210,11 +312,11 @@ export default function CreatePodcast() {
           </FieldGroup>
 
           <ActionRow>
-            <DraftButton type="button" onClick={handleSaveAsDraft}>
-              Save as Draft
+            <DraftButton type="button" onClick={handleSaveAsDraft} disabled={saving}>
+              {saving ? 'Saving...' : 'Save as Draft'}
             </DraftButton>
-            <PublishButton type="button" onClick={handlePublish}>
-              Publish Podcast
+            <PublishButton type="button" onClick={handlePublish} disabled={saving}>
+              {saving ? 'Saving...' : 'Publish Podcast'}
             </PublishButton>
           </ActionRow>
         </FormCard>

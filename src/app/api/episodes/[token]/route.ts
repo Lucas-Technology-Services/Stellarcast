@@ -1,0 +1,19 @@
+import { NextResponse } from 'next/server'
+import { serverGet } from '@/services/api'
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ token: string }> },
+) {
+  try {
+    const { token } = await params
+    const data = await serverGet<Record<string, unknown>>(
+      `/episodes/${encodeURIComponent(token)}`,
+      { machine: true },
+    )
+    return NextResponse.json(data)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch episode'
+    return NextResponse.json({ error: message }, { status: 404 })
+  }
+}
