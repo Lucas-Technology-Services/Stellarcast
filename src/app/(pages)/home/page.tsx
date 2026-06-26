@@ -114,6 +114,7 @@ export default function HomePage() {
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
           <NavCta href="#cta">Get Started</NavCta>
+          <a href="/login">Login</a>
         </Nav>
       </Header>
 

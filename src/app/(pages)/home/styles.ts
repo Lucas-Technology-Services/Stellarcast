@@ -84,10 +84,8 @@ export const Nav = styled.nav`
 
   @media (max-width: 768px) {
     gap: 16px;
-
-    a:not(:last-child) {
-      display: none;
-    }
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 `
 
