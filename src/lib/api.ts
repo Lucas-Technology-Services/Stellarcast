@@ -45,7 +45,7 @@ export interface LoginResponse {
   user: {
     id: string
     email: string
-    access_type: 'producer' | 'spector'
+    access_type: 'producer' | 'viewer'
     created_at: string
     updated_at: string
   }
@@ -67,7 +67,7 @@ export async function loginUser(
 export async function registerUser(
   email: string,
   password: string,
-  accessType: 'producer' | 'spector',
+  accessType: 'producer' | 'viewer',
 ): Promise<void> {
   await apiPost('/api/auth/register', {
     email,
