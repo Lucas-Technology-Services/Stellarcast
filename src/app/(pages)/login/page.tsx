@@ -194,6 +194,24 @@ export default function LoginPage() {
               required
               minLength={8}
             />
+            {!isRegister && (
+              <div style={{ marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/login/reset-password')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#a78bfa',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </Field>
 
           <Field>
