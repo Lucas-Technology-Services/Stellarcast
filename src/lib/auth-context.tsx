@@ -9,7 +9,7 @@ interface AuthContextValue {
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, accessType: 'producer' | 'spector') => Promise<void>
+  register: (email: string, password: string, accessType: 'producer' | 'viewer') => Promise<void>
   logout: () => void
 }
 
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const register = useCallback(
-    async (email: string, password: string, accessType: 'producer' | 'spector') => {
+    async (email: string, password: string, accessType: 'producer' | 'viewer') => {
       await registerUser(email, password, accessType)
       await login(email, password)
     },

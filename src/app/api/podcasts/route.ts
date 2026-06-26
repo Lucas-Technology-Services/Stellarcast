@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { serverPost } from '@/services/api'
+import { serverPost } from '@/services/externalApi'
 
 export async function POST(request: Request) {
   try {

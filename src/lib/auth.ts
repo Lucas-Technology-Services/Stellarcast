@@ -6,7 +6,7 @@ const USER_DATA_KEY = 'stellarcast_user_data'
 export interface UserData {
   id: string
   email: string
-  access_type: 'producer' | 'spector'
+  access_type: 'producer' | 'viewer'
   created_at: string
   updated_at: string
 }

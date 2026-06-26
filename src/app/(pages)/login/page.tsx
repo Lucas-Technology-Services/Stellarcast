@@ -136,7 +136,7 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [accessType, setAccessType] = useState<'producer' | 'spector'>('producer')
+  const [accessType, setAccessType] = useState<'producer' | 'viewer'>('producer')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -196,19 +196,17 @@ export default function LoginPage() {
             />
           </Field>
 
-          {isRegister && (
-            <Field>
-              <Label htmlFor="access-type">Account Type</Label>
-              <Select
-                id="access-type"
-                value={accessType}
-                onChange={(e) => setAccessType(e.target.value as 'producer' | 'spector')}
-              >
-                <option value="producer">Producer</option>
-                <option value="spector">Spector</option>
-              </Select>
-            </Field>
-          )}
+          <Field>
+            <Label htmlFor="access-type">Access Type</Label>
+            <Select
+              id="access-type"
+              value={accessType}
+              onChange={(e) => setAccessType(e.target.value as 'producer' | 'viewer')}
+            >
+              <option value="producer">Producer</option>
+              <option value="viewer">Viewer</option>
+            </Select>
+          </Field>
 
           <Button type="submit" disabled={loading}>
             {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
