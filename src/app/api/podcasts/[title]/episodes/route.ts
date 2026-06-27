@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { serverGet, serverPost } from '@/services/api'
+import { listEpisodes, createEpisode } from '@/services/podcastService'
 
 export async function GET(
   _request: Request,
@@ -7,14 +7,37 @@ export async function GET(
 ) {
   try {
     const { title } = await params
-    const data = await serverGet<Array<Record<string, unknown>>>(
-      `/podcasts/${encodeURIComponent(title)}/episodes`,
-      { machine: true },
+
+    if (!title) {
+      return NextResponse.json(
+        { error: 'Missing required field: title' },
+        { status: 400 },
+      )
+    }
+
+    const data = await listEpisodes(title)
+    return NextResponse.json(data, { status: 200 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+
+    if (message.includes('401')) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: message },
+        { status: 401 },
+      )
+    }
+
+    if (message.includes('404')) {
+      return NextResponse.json(
+        { error: 'Not Found', details: message },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: message },
+      { status: 500 },
     )
-    return NextResponse.json(data)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch episodes'
-    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
@@ -24,6 +47,17 @@ export async function POST(
 ) {
   try {
     const { title } = await params
+    const body = await request.json()
+
+    const { title: episodeTitle } = body
+
+    if (!episodeTitle) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title' },
+        { status: 400 },
+      )
+    }
+
     const authHeader = request.headers.get('Authorization')
 
     if (!authHeader) {
@@ -31,17 +65,29 @@ export async function POST(
     }
 
     const userToken = authHeader.replace('Bearer ', '')
-    const body = await request.json()
-
-    const data = await serverPost<Record<string, unknown>>(
-      `/podcasts/${encodeURIComponent(title)}/episodes`,
-      body,
-      { userToken },
-    )
+    const data = await createEpisode(title, body, userToken)
 
     return NextResponse.json(data, { status: 201 })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to create episode'
-    return NextResponse.json({ error: message }, { status: 400 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+
+    if (message.includes('401')) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: message },
+        { status: 401 },
+      )
+    }
+
+    if (message.includes('404')) {
+      return NextResponse.json(
+        { error: 'Not Found', details: message },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: message },
+      { status: 500 },
+    )
   }
 }

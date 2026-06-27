@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { serverGet } from '@/services/api'
+import { listMyPodcasts } from '@/services/podcastService'
 
 export async function GET(request: Request) {
   try {
@@ -12,13 +12,29 @@ export async function GET(request: Request) {
     }
 
     const userToken = authHeader.replace('Bearer ', '')
-    const query = producerEmail ? `?producer_email=${encodeURIComponent(producerEmail)}` : ''
+    const data = await listMyPodcasts(userToken, producerEmail ?? undefined)
 
-    const data = await serverGet<Array<Record<string, unknown>>>(`/podcasts/mine${query}`, { userToken })
+    return NextResponse.json(data, { status: 200 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
 
-    return NextResponse.json(data)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch podcasts'
-    return NextResponse.json({ error: message }, { status: 500 })
+    if (message.includes('401')) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: message },
+        { status: 401 },
+      )
+    }
+
+    if (message.includes('404')) {
+      return NextResponse.json(
+        { error: 'Not Found', details: message },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: message },
+      { status: 500 },
+    )
   }
 }
