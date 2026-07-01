@@ -104,6 +104,34 @@ src/
 | `CLIENT_ID_1` | Client ID for machine-to-machine auth |
 | `SECRET_1` | Client secret for machine-to-machine auth |
 
+> **Stable — do not modify:**  
+> `src/app/api/auth/token/route.js`  
+> `src/app/api/auth/token/validate/route.js`  
+> These routes are complete, tested, and will not be changed.
+
+### API Reference
+
+#### POST /api/auth/token
+
+Generates a machine-to-machine JWT token using client credentials.
+
+```bash
+curl -X POST http://localhost:3000/api/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "lts_a7f_5202l",
+    "secret": "k9Hp4!2vN6rT1"
+  }'
+```
+
+**Response (201):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "client_id": "lts_a7f_5202l"
+}
+```
+
 ### Getting Started
 
 ```bash
