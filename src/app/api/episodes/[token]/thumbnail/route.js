@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server'
 import { serverUploadFile } from '@/services/api'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ title: string }> },
-) {
+export async function POST(request, { params }) {
   try {
-    const { title } = await params
+    const { token } = await params
     const authHeader = request.headers.get('Authorization')
 
     if (!authHeader) {
@@ -16,15 +13,15 @@ export async function POST(
     const userToken = authHeader.replace('Bearer ', '')
     const formData = await request.formData()
 
-    const data = await serverUploadFile<Record<string, unknown>>(
-      `/podcasts/${encodeURIComponent(title)}/cover`,
+    const data = await serverUploadFile(
+      `/episodes/${encodeURIComponent(token)}/thumbnail`,
       formData,
       { userToken },
     )
 
     return NextResponse.json(data)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to upload cover'
+    const message = error instanceof Error ? error.message : 'Failed to upload thumbnail'
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

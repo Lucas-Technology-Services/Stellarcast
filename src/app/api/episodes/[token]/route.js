@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { serverGet } from '@/services/externalApi'
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ token: string }> },
-) {
+export async function GET(_request, { params }) {
   try {
     const { token } = await params
-    const data = await serverGet<Record<string, unknown>>(
+    const data = await serverGet(
       `/episodes/${encodeURIComponent(token)}`,
       { machine: true },
     )

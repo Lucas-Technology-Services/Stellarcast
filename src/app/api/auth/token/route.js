@@ -1,31 +1,41 @@
 import { NextResponse } from "next/server";
-import { getExternalToken } from "@/services/externalApi";
+import { generateToken } from "@/services/auth_service";
 
-export async function POST() {
-    try {
-        const tokenData = await getExternalToken();
-        return NextResponse.json(
-            { token: tokenData.token },
-            { status: 200 }
-        );
+export async function POST(request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const clientId = body.client_id || process.env.CLIENT_ID_1;
+    const secret = body.secret || process.env.SECRET_1;
+
+    if (!clientId || !secret) {
+      return NextResponse.json(
+        { error: "client_id and secret are required" },
+        { status: 400 },
+      );
     }
-    catch (err) {
-        const message = err.message || "Unknown error";
-        if (message.includes("401")) {
-            return NextResponse.json(
-                { error: "Unauthorize", details: message},
-                { status: 401}
-            );
-        }
-        if (message.includes("404")) {
-            return NextResponse.json(
-                { error: "Not found", details: message},
-                { status: 404}
-            );
-        }
-        return NextResponse.json(
-            { error: "Internal Server Error", details: message},
-            { status: 500}
-        );
+
+    const result = await generateToken(clientId, secret);
+
+    return NextResponse.json(
+      {
+        token: result.token,
+        client_id: result.client_id,
+      },
+      { status: 201 },
+    );
+  } catch (err) {
+    const message = err.message || "Unknown error";
+
+    if (message === "invalid client_id or secret") {
+      return NextResponse.json(
+        { error: "invalid client_id or secret" },
+        { status: 401 },
+      );
     }
+
+    return NextResponse.json(
+      { error: "failed to generate token", details: message },
+      { status: 500 },
+    );
+  }
 }

@@ -1,16 +1,16 @@
 import 'server-only'
 
-const API_URL = process.env.API_URL
-
-if (!API_URL) {
-  throw new Error('API_URL environment variable is not set')
+function getApiUrl(): string {
+  const url = process.env.PODCAST_BASE_URL
+  if (!url) throw new Error('PODCAST_BASE_URL environment variable is not set')
+  return url
 }
 
 let cachedMachineToken: string | null = null
 
 async function getMachineToken(): Promise<string> {
   if (cachedMachineToken) return cachedMachineToken
-  const res = await fetch(`${API_URL}/auth/token`, { method: 'POST' })
+  const res = await fetch(`${getApiUrl()}/auth/token`, { method: 'POST' })
   if (!res.ok) {
     throw new Error(`Failed to obtain machine token: ${res.status}`)
   }
@@ -43,7 +43,7 @@ export async function serverGet<T>(
   auth?: { machine?: boolean; userToken?: string },
 ): Promise<T> {
   const token = auth?.userToken || (auth?.machine ? await getMachineToken() : undefined)
-  const res = await fetch(`${API_URL}${endpoint}`, { headers: buildHeaders(token) })
+  const res = await fetch(`${getApiUrl()}${endpoint}`, { headers: buildHeaders(token) })
   return handleResponse<T>(res)
 }
 
@@ -53,7 +53,7 @@ export async function serverPost<T>(
   auth?: { machine?: boolean; userToken?: string },
 ): Promise<T> {
   const token = auth?.userToken || (auth?.machine ? await getMachineToken() : undefined)
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${getApiUrl()}${endpoint}`, {
     method: 'POST',
     headers: buildHeaders(token),
     body: JSON.stringify(body),
@@ -69,7 +69,7 @@ export async function serverUploadFile<T>(
   const token = auth?.userToken || (auth?.machine ? await getMachineToken() : undefined)
   const headers: Record<string, string> = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${getApiUrl()}${endpoint}`, {
     method: 'POST',
     headers,
     body: formData,
