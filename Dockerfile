@@ -16,8 +16,27 @@ COPY . .
 ENV CLIENT_ID_1="" \
     SECRET_1="" \
     PODCAST_BSE_URL="" \
+    API_URL="" \
     JWT_SECRET="" \
-    PORT=3000
+    PORT=3000 \
+    DB_HOST="" \
+    DB_NAME="" \
+    DB_PASSWORD="" \
+    DB_USER="" \
+    DB_PORT="" \
+    DB_TIMEZONE="" \
+    PLATFORM_BASE_URL="" \
+    PLAYER_TOKEN_SECRET="" \
+    RABBITMQ_API_PASSWORD="" \
+    RABBITMQ_API_USERNAME="" \
+    RABBITMQ_BASE_URL="" \
+    RABBITMQ_CLOUD_URL="" \
+    RABBITMQ_VHOST="" \
+    SWAGGER_PASSWORD="" \
+    SWAGGER_USER="" \
+    YOUTUBE_DEFAULT_CATEGORY_ID="" \
+    YOUTUBE_OAUTH_CREDENTIALS=""
+
 
 RUN npm run build
 
