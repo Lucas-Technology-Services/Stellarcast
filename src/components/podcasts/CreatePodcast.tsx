@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { CirclePlay, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { createPodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
+import { ApiError } from '@/lib/api-client'
 import {
   PageWrapper,
   BackgroundOverlay,
@@ -51,9 +52,12 @@ interface FormState {
 export default function CreatePodcast() {
   const router = useRouter()
   const { token, user, isLoading } = useAuth()
+  const [mounted, setMounted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showExtra, setShowExtra] = useState(false)
   const [categories, setCategories] = useState<PodcastCategory[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [categoriesFailed, setCategoriesFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>({
@@ -66,10 +70,11 @@ export default function CreatePodcast() {
   })
 
   useEffect(() => {
-    if (!isLoading && !token) {
+    setMounted(true)
+    if (!token) {
       router.push('/login')
     }
-  }, [token, isLoading, router])
+  }, [token, router])
 
   useEffect(() => {
     let cancelled = false
@@ -78,11 +83,18 @@ export default function CreatePodcast() {
         const cats = await fetchCategories()
         if (cancelled) return
         setCategories(cats)
+        setCategoriesLoading(false)
         if (cats.length > 0) {
           setForm((prev) => prev.category ? prev : { ...prev, category: cats[0].name })
+        } else {
+          setCategoriesFailed(true)
         }
       } catch {
-        if (!cancelled) setCategories([])
+        if (!cancelled) {
+          setCategories([])
+          setCategoriesLoading(false)
+          setCategoriesFailed(true)
+        }
       }
     }
     load()
@@ -108,10 +120,19 @@ export default function CreatePodcast() {
   async function savePodcast() {
     if (!token) return
     setError('')
+    if (!form.title.trim()) {
+      setError('Podcast title is required.')
+      return
+    }
+    if (!form.category.trim()) {
+      setError('Please select or enter a category.')
+      return
+    }
     setSaving(true)
     try {
       const podcast = await createPodcast(
         {
+          email: user!.email,
           title: form.title,
           description: form.description || undefined,
           category_name: form.category || undefined,
@@ -126,7 +147,11 @@ export default function CreatePodcast() {
 
       router.push(`/podcasts/${encodeURIComponent(podcast.title)}/episodes`)
     } catch (err) {
-      setError(err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'Failed to save podcast')
+      if (err instanceof ApiError && err.status === 401) {
+        router.push('/login')
+        return
+      }
+      setError(err instanceof Error ? err.message : 'Failed to save podcast')
     } finally {
       setSaving(false)
     }
@@ -142,7 +167,7 @@ export default function CreatePodcast() {
 
   const allCategories = showExtra ? categories : categories.slice(0, 6)
 
-  if (isLoading || !token) {
+  if (!mounted || !token || !user) {
     return (
       <PageWrapper>
         <PageContent style={{ justifyContent: 'center', minHeight: '60vh' }}>
@@ -236,33 +261,45 @@ export default function CreatePodcast() {
 
           <FieldGroup>
             <Label>Category</Label>
-            <CategoryTagsWrapper>
-              {allCategories.map((cat) => (
-                <CategoryTag
-                  key={cat.name}
-                  type="button"
-                  $active={form.category === cat.name}
-                  onClick={() => handleCategorySelect(cat.name)}
-                >
-                  {cat.name}
-                </CategoryTag>
-              ))}
-              {categories.length > 6 && (
-                <ExpandCategoriesButton
-                  type="button"
-                  onClick={() => setShowExtra((v) => !v)}
-                  aria-label={showExtra ? 'Show fewer categories' : 'Show more categories'}
-                >
-                  <ChevronDown
-                    size={16}
-                    style={{
-                      transform: showExtra ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.2s',
-                    }}
-                  />
-                </ExpandCategoriesButton>
-              )}
-            </CategoryTagsWrapper>
+            {categoriesLoading ? (
+              <span style={{ color: '#94a3b8', fontSize: 13 }}>Loading categories...</span>
+            ) : categoriesFailed ? (
+              <Input
+                id="podcast-category"
+                type="text"
+                placeholder="Enter category name..."
+                value={form.category}
+                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+              />
+            ) : (
+              <CategoryTagsWrapper>
+                {allCategories.map((cat) => (
+                  <CategoryTag
+                    key={cat.name}
+                    type="button"
+                    $active={form.category === cat.name}
+                    onClick={() => handleCategorySelect(cat.name)}
+                  >
+                    {cat.name}
+                  </CategoryTag>
+                ))}
+                {categories.length > 6 && (
+                  <ExpandCategoriesButton
+                    type="button"
+                    onClick={() => setShowExtra((v) => !v)}
+                    aria-label={showExtra ? 'Show fewer categories' : 'Show more categories'}
+                  >
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        transform: showExtra ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.2s',
+                      }}
+                    />
+                  </ExpandCategoriesButton>
+                )}
+              </CategoryTagsWrapper>
+            )}
           </FieldGroup>
 
           <FieldGroup>
@@ -302,7 +339,7 @@ export default function CreatePodcast() {
                     width={120}
                     height={120}
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                    unoptimized={form.coverPreview.startsWith('blob:')}
+                    unoptimized
                   />
                 ) : (
                   <CoverPreviewPlaceholder>No image</CoverPreviewPlaceholder>

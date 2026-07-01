@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { serverUploadFile } from '@/services/api'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ token: string }> },
-) {
+export async function POST(request, { params }) {
   try {
     const { token } = await params
     const authHeader = request.headers.get('Authorization')
@@ -16,7 +13,7 @@ export async function POST(
     const userToken = authHeader.replace('Bearer ', '')
     const formData = await request.formData()
 
-    const data = await serverUploadFile<Record<string, unknown>>(
+    const data = await serverUploadFile(
       `/episodes/${encodeURIComponent(token)}/upload`,
       formData,
       { userToken },

@@ -77,7 +77,7 @@ export async function registerUser(
 }
 
 export async function createPodcast(
-  data: { title: string; description?: string; category_name?: string; cover_image_url?: string },
+  data: { email: string; title: string; description?: string; category_name?: string; cover_image_url?: string },
   token: string,
 ): Promise<Podcast> {
   return apiPost<Podcast>('/api/podcasts', data, token)
