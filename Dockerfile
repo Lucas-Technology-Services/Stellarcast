@@ -13,7 +13,11 @@ RUN npm install
 
 
 COPY . .
-
+ENV CLIENT_ID_1="" \
+    SECRET_1="" \
+    PODCAST_BSE_URL="" \
+    JWT_SECRET="" \
+    PORT=3000
 
 RUN npm run build
 
