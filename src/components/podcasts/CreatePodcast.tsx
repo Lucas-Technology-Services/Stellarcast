@@ -130,19 +130,16 @@ export default function CreatePodcast() {
     }
     setSaving(true)
     try {
-      const podcast = await createPodcast(
-        {
-          email: user!.email,
-          title: form.title,
-          description: form.description || undefined,
-          category_name: form.category || undefined,
-          cover_image_url: form.coverUrl || undefined,
-        },
-        token,
-      )
+      const podcast = await createPodcast({
+        email: user!.email,
+        title: form.title,
+        description: form.description || undefined,
+        category_name: form.category || undefined,
+        cover_image_url: form.coverUrl || undefined,
+      })
 
       if (form.coverFile) {
-        await uploadPodcastCover(podcast.title, form.coverFile, token)
+        await uploadPodcastCover(podcast.title, form.coverFile)
       }
 
       router.push(`/podcasts/${encodeURIComponent(podcast.title)}/episodes`)

@@ -48,18 +48,14 @@ export default function CreateEpisode() {
     setError('')
     setSaving(true)
     try {
-      const episode = await createEpisode(
-        title,
-        {
-          title: epTitle,
-          description: description || undefined,
-          duration_seconds: duration ? parseInt(duration, 10) : undefined,
-        },
-        token,
-      )
+      const episode = await createEpisode(title, {
+        title: epTitle,
+        description: description || undefined,
+        duration_seconds: duration ? parseInt(duration, 10) : undefined,
+      })
 
       if (thumbnailFile) {
-        await uploadEpisodeThumbnail(episode.masked_video_token, thumbnailFile, token)
+        await uploadEpisodeThumbnail(episode.masked_video_token, thumbnailFile)
       }
 
       router.push(`/podcasts/${encodeURIComponent(title)}/episodes`)

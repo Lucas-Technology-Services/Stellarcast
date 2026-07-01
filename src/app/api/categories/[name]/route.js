@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { validateToken } from "@/services/auth_service";
 import {
-  getEpisodeByToken,
-  updateEpisode,
-  deleteEpisode,
-  resolveEpisodeIDByToken,
+  getCategoryByName,
+  updateCategory,
+  deleteCategory,
+  resolveCategoryIDByName,
 } from "@/services/podcastService";
 
 export async function GET(request, { params }) {
@@ -15,8 +15,8 @@ export async function GET(request, { params }) {
     }
     await validateToken(authHeader.slice(7));
 
-    const { token } = await params;
-    const data = await getEpisodeByToken(token);
+    const { name } = await params;
+    const data = await getCategoryByName(name);
     return NextResponse.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -25,8 +25,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (message === "episode not found") {
-      return NextResponse.json({ error: "episode not found" }, { status: 404 });
+    if (message === "category not found") {
+      return NextResponse.json({ error: "category not found" }, { status: 404 });
     }
 
     return NextResponse.json({ error: message }, { status: 500 });
@@ -41,18 +41,18 @@ export async function PUT(request, { params }) {
     }
     await validateToken(authHeader.slice(7));
 
-    const { token } = await params;
+    const { name } = await params;
     const body = await request.json();
 
-    if (!body.title) {
+    if (!body.name) {
       return NextResponse.json(
-        { error: "title is required" },
+        { error: "name is required" },
         { status: 400 },
       );
     }
 
-    const episodeID = await resolveEpisodeIDByToken(token);
-    const data = await updateEpisode(episodeID, body);
+    const categoryID = await resolveCategoryIDByName(name);
+    const data = await updateCategory(categoryID, body.name, body.description ?? null);
     return NextResponse.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -61,8 +61,8 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (message === "episode not found") {
-      return NextResponse.json({ error: "episode not found" }, { status: 404 });
+    if (message === "category not found") {
+      return NextResponse.json({ error: "category not found" }, { status: 404 });
     }
 
     return NextResponse.json({ error: message }, { status: 500 });
@@ -77,9 +77,9 @@ export async function DELETE(request, { params }) {
     }
     await validateToken(authHeader.slice(7));
 
-    const { token } = await params;
-    const episodeID = await resolveEpisodeIDByToken(token);
-    await deleteEpisode(episodeID);
+    const { name } = await params;
+    const categoryID = await resolveCategoryIDByName(name);
+    await deleteCategory(categoryID);
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -88,8 +88,8 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (message === "episode not found") {
-      return NextResponse.json({ error: "episode not found" }, { status: 404 });
+    if (message === "category not found") {
+      return NextResponse.json({ error: "category not found" }, { status: 404 });
     }
 
     return NextResponse.json({ error: message }, { status: 500 });

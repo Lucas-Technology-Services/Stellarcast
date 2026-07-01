@@ -1,49 +1,63 @@
-import { NextResponse } from 'next/server'
-import { createPodcast } from '@/services/podcastService'
+import { NextResponse } from "next/server";
+import { validateToken } from "@/services/auth_service";
+import { createPodcast, listAllPodcasts } from "@/services/podcastService";
+
+export async function GET(request) {
+  try {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    await validateToken(authHeader.slice(7));
+
+    const data = await listAllPodcasts();
+    return NextResponse.json(data);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+
+    if (message === "token not found or expired" || message === "invalid token") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
 export async function POST(request) {
   try {
-    const body = await request.json()
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    await validateToken(authHeader.slice(7));
 
-    const { title, category_name } = body
+    const body = await request.json();
+    const { title, category_name } = body;
 
     if (!title || !category_name) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, category_name' },
+        { error: "Missing required fields: title, category_name" },
         { status: 400 },
-      )
+      );
     }
 
-    const authHeader = request.headers.get('Authorization')
-
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const userToken = authHeader.replace('Bearer ', '')
-    const data = await createPodcast(body, userToken)
-
-    return NextResponse.json(data, { status: 201 })
+    const data = await createPodcast(body);
+    return NextResponse.json(data, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = err instanceof Error ? err.message : "Unknown error";
 
-    if (message.includes('401')) {
-      return NextResponse.json(
-        { error: 'Unauthorized', details: message },
-        { status: 401 },
-      )
+    if (message === "token not found or expired" || message === "invalid token") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (message.includes('404')) {
-      return NextResponse.json(
-        { error: 'Not Found', details: message },
-        { status: 404 },
-      )
+    if (message === "user not found") {
+      return NextResponse.json({ error: "user not found" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: message },
-      { status: 500 },
-    )
+    if (message === "category not found") {
+      return NextResponse.json({ error: "category not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,49 +1,57 @@
-import { NextResponse } from 'next/server'
-import { uploadPodcastCover } from '@/services/podcastService'
+import { NextResponse } from "next/server";
+import { validateToken } from "@/services/auth_service";
+import {
+  resolvePodcastIDByTitle,
+  updatePodcastCoverImage,
+} from "@/services/podcastService";
 
 export async function POST(request, { params }) {
   try {
-    const { title } = await params
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    await validateToken(authHeader.slice(7));
+
+    const { title } = await params;
 
     if (!title) {
       return NextResponse.json(
-        { error: 'Missing required field: title' },
+        { error: "title is required" },
         { status: 400 },
-      )
+      );
     }
 
-    const authHeader = request.headers.get('Authorization')
+    const formData = await request.formData();
+    const image = formData.get("image");
 
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    if (!image || typeof image === "string") {
+      return NextResponse.json(
+        { error: "image file is required" },
+        { status: 400 },
+      );
     }
 
-    const userToken = authHeader.replace('Bearer ', '')
-    const formData = await request.formData()
+    const buffer = Buffer.from(await image.arrayBuffer());
+    const base64 = buffer.toString("base64");
+    const mimeType = image.type || "image/jpeg";
+    const base64Image = `data:${mimeType};base64,${base64}`;
 
-    const data = await uploadPodcastCover(title, formData, userToken)
+    const podcastID = await resolvePodcastIDByTitle(title);
+    const data = await updatePodcastCoverImage(podcastID, base64Image);
 
-    return NextResponse.json(data, { status: 200 })
+    return NextResponse.json(data, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = err instanceof Error ? err.message : "Unknown error";
 
-    if (message.includes('401')) {
-      return NextResponse.json(
-        { error: 'Unauthorized', details: message },
-        { status: 401 },
-      )
+    if (message === "token not found or expired" || message === "invalid token") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (message.includes('404')) {
-      return NextResponse.json(
-        { error: 'Not Found', details: message },
-        { status: 404 },
-      )
+    if (message === "podcast not found") {
+      return NextResponse.json({ error: "podcast not found" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: message },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
