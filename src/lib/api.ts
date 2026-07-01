@@ -57,11 +57,25 @@ export async function fetchCategories(): Promise<PodcastCategory[]> {
   return apiGet<PodcastCategory[]>('/api/categories')
 }
 
+let _machineToken: string | null = null
+
+async function getMachineToken(): Promise<string> {
+  if (_machineToken) return _machineToken
+
+  const res = await apiPost<{ token: string }>('/api/auth/token', {})
+  _machineToken = res.token
+
+  setTimeout(() => { _machineToken = null }, 100 * 1000)
+
+  return _machineToken
+}
+
 export async function loginUser(
   email: string,
   password: string,
 ): Promise<LoginResponse> {
-  return apiPost<LoginResponse>('/api/auth/login', { email, password })
+  const token = await getMachineToken()
+  return apiPost<LoginResponse>('/api/auth/login', { email, password }, token)
 }
 
 export async function registerUser(
@@ -69,11 +83,12 @@ export async function registerUser(
   password: string,
   accessType: 'producer' | 'viewer',
 ): Promise<void> {
+  const token = await getMachineToken()
   await apiPost('/api/auth/register', {
     email,
     password,
     access_type: accessType,
-  })
+  }, token)
 }
 
 export async function createPodcast(
