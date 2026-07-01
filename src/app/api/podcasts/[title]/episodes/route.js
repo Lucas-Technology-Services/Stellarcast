@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listEpisodes, createEpisode } from '@/services/podcastService'
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ title: string }> },
-) {
+export async function GET(_request, { params }) {
   try {
     const { title } = await params
 
@@ -41,10 +38,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ title: string }> },
-) {
+export async function POST(request, { params }) {
   try {
     const { title } = await params
     const body = await request.json()

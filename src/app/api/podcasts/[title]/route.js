@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
-import { uploadPodcastCover } from '@/services/podcastService'
+import { getPodcastByTitle } from '@/services/podcastService'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ title: string }> },
-) {
+export async function GET(_request, { params }) {
   try {
     const { title } = await params
 
@@ -15,17 +12,7 @@ export async function POST(
       )
     }
 
-    const authHeader = request.headers.get('Authorization')
-
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const userToken = authHeader.replace('Bearer ', '')
-    const formData = await request.formData()
-
-    const data = await uploadPodcastCover(title, formData, userToken)
-
+    const data = await getPodcastByTitle(title)
     return NextResponse.json(data, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'

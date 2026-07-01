@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { serverUploadFile } from '@/services/api'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ token: string }> },
-) {
+export async function POST(request, { params }) {
   try {
     const { token } = await params
     const authHeader = request.headers.get('Authorization')
@@ -16,15 +13,15 @@ export async function POST(
     const userToken = authHeader.replace('Bearer ', '')
     const formData = await request.formData()
 
-    const data = await serverUploadFile<Record<string, unknown>>(
-      `/episodes/${encodeURIComponent(token)}/thumbnail`,
+    const data = await serverUploadFile(
+      `/episodes/${encodeURIComponent(token)}/upload`,
       formData,
       { userToken },
     )
 
-    return NextResponse.json(data)
+    return NextResponse.json(data, { status: 202 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to upload thumbnail'
+    const message = error instanceof Error ? error.message : 'Upload failed'
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

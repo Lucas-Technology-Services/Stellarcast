@@ -47,6 +47,7 @@ export async function fetchCategories(): Promise<PodcastCategory[]> {
 
 export async function createPodcast(
   data: {
+    email: string
     title: string
     description?: string
     category_name?: string

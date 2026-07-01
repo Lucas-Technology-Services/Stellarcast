@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createPodcast } from '@/services/podcastService'
+import { uploadPodcastCover } from '@/services/podcastService'
 
-export async function POST(request: Request) {
+export async function POST(request, { params }) {
   try {
-    const body = await request.json()
+    const { title } = await params
 
-    const { title, category_name } = body
-
-    if (!title || !category_name) {
+    if (!title) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, category_name' },
+        { error: 'Missing required field: title' },
         { status: 400 },
       )
     }
@@ -21,9 +19,11 @@ export async function POST(request: Request) {
     }
 
     const userToken = authHeader.replace('Bearer ', '')
-    const data = await createPodcast(body, userToken)
+    const formData = await request.formData()
 
-    return NextResponse.json(data, { status: 201 })
+    const data = await uploadPodcastCover(title, formData, userToken)
+
+    return NextResponse.json(data, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
 

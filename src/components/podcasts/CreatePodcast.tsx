@@ -52,6 +52,7 @@ interface FormState {
 export default function CreatePodcast() {
   const router = useRouter()
   const { token, user, isLoading } = useAuth()
+  const [mounted, setMounted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showExtra, setShowExtra] = useState(false)
   const [categories, setCategories] = useState<PodcastCategory[]>([])
@@ -69,10 +70,11 @@ export default function CreatePodcast() {
   })
 
   useEffect(() => {
-    if (!isLoading && !token) {
+    setMounted(true)
+    if (!token) {
       router.push('/login')
     }
-  }, [token, isLoading, router])
+  }, [token, router])
 
   useEffect(() => {
     let cancelled = false
@@ -130,6 +132,7 @@ export default function CreatePodcast() {
     try {
       const podcast = await createPodcast(
         {
+          email: user!.email,
           title: form.title,
           description: form.description || undefined,
           category_name: form.category || undefined,
@@ -164,7 +167,7 @@ export default function CreatePodcast() {
 
   const allCategories = showExtra ? categories : categories.slice(0, 6)
 
-  if (isLoading || !token) {
+  if (!mounted || !token || !user) {
     return (
       <PageWrapper>
         <PageContent style={{ justifyContent: 'center', minHeight: '60vh' }}>
@@ -336,7 +339,7 @@ export default function CreatePodcast() {
                     width={120}
                     height={120}
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                    unoptimized={form.coverPreview.startsWith('blob:')}
+                    unoptimized
                   />
                 ) : (
                   <CoverPreviewPlaceholder>No image</CoverPreviewPlaceholder>
