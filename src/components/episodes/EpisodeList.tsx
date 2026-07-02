@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Plus, Clock, Film } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { listEpisodes, getPodcastByTitle, type Episode, type Podcast } from '@/lib/api'
 import {
   Wrapper,
   Header,
   LogoText,
   Nav,
-  UserBadge,
   Content,
   PageTitle,
   PageSubtitle,
@@ -82,9 +82,7 @@ export default function EpisodeList() {
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
           <Link href={`/podcasts/${encodeURIComponent(title)}/episodes/create`}>New Episode</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 

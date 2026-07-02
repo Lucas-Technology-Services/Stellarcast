@@ -264,6 +264,73 @@ function buildSpec() {
           },
         },
       },
+      "/auth/reset-password": {
+        post: {
+          tags: ["Auth"],
+          summary: "Request a password reset",
+          description:
+            "Validates the email exists in the database. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["email"],
+                  properties: {
+                    email: {
+                      type: "string",
+                      format: "email",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description:
+                "Generic success message (does not reveal if email exists)",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      message: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+            "400": {
+              description: "Email is required",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
       "/auth/register": {
         post: {
           tags: ["Auth"],
@@ -320,6 +387,15 @@ function buildSpec() {
           tags: ["Auth"],
           summary: "Login with email and password",
           security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
           requestBody: {
             required: true,
             content: {
@@ -370,6 +446,15 @@ function buildSpec() {
           tags: ["Categories"],
           summary: "List all categories",
           security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
           responses: {
             "200": {
               description: "List of categories",
@@ -396,6 +481,15 @@ function buildSpec() {
           tags: ["Categories"],
           summary: "Create a category",
           security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
           requestBody: {
             required: true,
             content: {
@@ -446,6 +540,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "name",
               in: "path",
               required: true,
@@ -484,6 +585,13 @@ function buildSpec() {
           summary: "Update a category",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "name",
               in: "path",
@@ -547,6 +655,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "name",
               in: "path",
               required: true,
@@ -579,6 +694,15 @@ function buildSpec() {
           tags: ["Podcasts"],
           summary: "List all podcasts",
           security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
           responses: {
             "200": {
               description: "List of podcasts",
@@ -605,6 +729,15 @@ function buildSpec() {
           tags: ["Podcasts"],
           summary: "Create a podcast",
           security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+          ],
           requestBody: {
             required: true,
             content: {
@@ -666,6 +799,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "title",
               in: "path",
               required: true,
@@ -706,6 +846,13 @@ function buildSpec() {
           summary: "Update a podcast",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "title",
               in: "path",
@@ -771,6 +918,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "title",
               in: "path",
               required: true,
@@ -804,6 +958,13 @@ function buildSpec() {
           summary: "List episodes for a podcast",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "title",
               in: "path",
@@ -846,6 +1007,13 @@ function buildSpec() {
           summary: "Create an episode for a podcast",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "title",
               in: "path",
@@ -912,6 +1080,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "title",
               in: "path",
               required: true,
@@ -975,6 +1150,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "user_email",
               in: "query",
               required: true,
@@ -1027,6 +1209,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "token",
               in: "path",
               required: true,
@@ -1065,6 +1254,13 @@ function buildSpec() {
           summary: "Update an episode",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "token",
               in: "path",
@@ -1130,6 +1326,13 @@ function buildSpec() {
           security: [{ machineToken: [] }],
           parameters: [
             {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
+            {
               name: "token",
               in: "path",
               required: true,
@@ -1163,6 +1366,13 @@ function buildSpec() {
           summary: "Upload a video for an episode",
           security: [{ userToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "User JWT from POST /api/auth/login",
+            },
             {
               name: "token",
               in: "path",
@@ -1210,6 +1420,13 @@ function buildSpec() {
           summary: "Upload a thumbnail for an episode",
           security: [{ machineToken: [] }],
           parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /api/auth/token",
+            },
             {
               name: "token",
               in: "path",

@@ -2,8 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import bgImage from '@/app/assets/background_img.jpg'
 import { Mic, BarChart3, Globe, Upload, Share2, Headphones } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import {
   Page,
   Header,
@@ -101,6 +104,9 @@ const steps = [
 ]
 
 export default function HomePage() {
+  const router = useRouter()
+  const { user, token } = useAuth()
+
   return (
     <Page>
       <Header>
@@ -114,7 +120,7 @@ export default function HomePage() {
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
           <NavCta href="#cta">Get Started</NavCta>
-          <a href="/login">Login</a>
+          {token && user ? <UserMenu /> : <a href="/login">Login</a>}
         </Nav>
       </Header>
 

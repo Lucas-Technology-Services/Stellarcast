@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Upload, CheckCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { uploadEpisodeVideo, getEpisode } from '@/lib/api'
 import type { Episode } from '@/lib/api'
 import {
@@ -11,7 +12,6 @@ import {
   Header,
   LogoText,
   Nav,
-  UserBadge,
   Content,
   PageTitle,
   BackLink,
@@ -106,9 +106,7 @@ export default function VideoUpload() {
         <LogoText>StellarCast</LogoText>
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 
