@@ -54,7 +54,7 @@ function buildSpec() {
           type: "http",
           scheme: "bearer",
           description:
-            "Machine JWT token obtained from POST /api/auth/token",
+            "Machine JWT token obtained from POST /auth/token",
         },
         userToken: {
           type: "http",
@@ -277,7 +277,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           requestBody: {
@@ -393,7 +393,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           requestBody: {
@@ -452,7 +452,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           responses: {
@@ -487,7 +487,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           requestBody: {
@@ -544,7 +544,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "name",
@@ -590,7 +590,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "name",
@@ -659,7 +659,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "name",
@@ -700,7 +700,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           responses: {
@@ -735,7 +735,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
           ],
           requestBody: {
@@ -803,7 +803,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -851,7 +851,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -922,7 +922,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -963,7 +963,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -1012,7 +1012,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -1084,7 +1084,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "title",
@@ -1154,7 +1154,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "user_email",
@@ -1213,7 +1213,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "token",
@@ -1259,7 +1259,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "token",
@@ -1330,7 +1330,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "token",
@@ -1425,7 +1425,7 @@ function buildSpec() {
               name: "Authorization",
               required: true,
               schema: { type: "string" },
-              description: "Machine Bearer token from POST /api/auth/token",
+              description: "Machine Bearer token from POST /auth/token",
             },
             {
               name: "token",
@@ -1475,6 +1475,157 @@ function buildSpec() {
             },
             "404": {
               description: "Episode not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/feeds": {
+        post: {
+          tags: ["Feeds"],
+          summary: "Create a feed entry",
+          description:
+            "Inserts a new feed record linking a podcast and an episode. Called automatically when a producer creates a podcast with episodes. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["podcast_id", "episode_id"],
+                  properties: {
+                    podcast_id: {
+                      type: "string",
+                      format: "uuid",
+                      description: "ID of the podcast",
+                    },
+                    episode_id: {
+                      type: "string",
+                      format: "uuid",
+                      description: "ID of the episode",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "201": {
+              description: "Feed entry created",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string", format: "uuid" },
+                    },
+                  },
+                },
+              },
+            },
+            "400": {
+              description: "Missing podcast_id or episode_id",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "podcast_id or episode_id not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "500": {
+              description: "Failed to create feed entry",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/feeds/{slug}": {
+        get: {
+          tags: ["Feeds"],
+          summary: "Get RSS 2.0 feed for a podcast",
+          description:
+            "Returns a valid RSS 2.0 feed with iTunes namespace for the podcast identified by its title or hyphenated slug. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+            {
+              name: "slug",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description:
+                "Podcast title or hyphenated slug (e.g. 'my-podcast' or 'My Podcast')",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "RSS XML feed",
+              content: {
+                "application/rss+xml": {
+                  schema: {
+                    type: "string",
+                    description: "RSS 2.0 XML with iTunes namespace",
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Podcast not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "500": {
+              description: "Failed to generate feed",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/Error" },
