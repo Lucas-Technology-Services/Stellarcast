@@ -52,9 +52,11 @@ export interface LoginResponse {
 }
 
 import { apiGet, apiPost, apiUploadFile } from './api-client'
+import { getUserData } from './auth'
 
 export async function fetchCategories(): Promise<PodcastCategory[]> {
-  return apiGet<PodcastCategory[]>('/api/categories')
+  const token = await getMachineToken()
+  return apiGet<PodcastCategory[]>('/api/categories', token)
 }
 
 let _machineToken: string | null = null
@@ -93,30 +95,36 @@ export async function registerUser(
 
 export async function createPodcast(
   data: { email: string; title: string; description?: string; category_name?: string; cover_image_url?: string },
-  token: string,
 ): Promise<Podcast> {
+  const token = await getMachineToken()
   return apiPost<Podcast>('/api/podcasts', data, token)
 }
 
-export async function listMyPodcasts(token: string): Promise<Podcast[]> {
-  return apiGet<Podcast[]>('/api/podcasts/mine', token)
+export async function listMyPodcasts(_token?: string): Promise<Podcast[]> {
+  const machineToken = await getMachineToken()
+  const userData = getUserData()
+  const email = userData?.email ?? ''
+  return apiGet<Podcast[]>(`/api/podcasts/mine?user_email=${encodeURIComponent(email)}`, machineToken)
 }
 
 export async function getPodcastByTitle(title: string): Promise<Podcast> {
-  return apiGet<Podcast>(`/api/podcasts/${encodeURIComponent(title)}`)
+  const token = await getMachineToken()
+  return apiGet<Podcast>(`/api/podcasts/${encodeURIComponent(title)}`, token)
 }
 
 export async function listEpisodes(podcastTitle: string): Promise<Episode[]> {
+  const token = await getMachineToken()
   return apiGet<Episode[]>(
     `/api/podcasts/${encodeURIComponent(podcastTitle)}/episodes`,
+    token,
   )
 }
 
 export async function createEpisode(
   podcastTitle: string,
   data: { title: string; description?: string; duration_seconds?: number },
-  token: string,
 ): Promise<Episode> {
+  const token = await getMachineToken()
   return apiPost<Episode>(
     `/api/podcasts/${encodeURIComponent(podcastTitle)}/episodes`,
     data,
@@ -125,14 +133,15 @@ export async function createEpisode(
 }
 
 export async function getEpisode(episodeToken: string): Promise<Episode> {
-  return apiGet<Episode>(`/api/episodes/${encodeURIComponent(episodeToken)}`)
+  const token = await getMachineToken()
+  return apiGet<Episode>(`/api/episodes/${encodeURIComponent(episodeToken)}`, token)
 }
 
 export async function uploadEpisodeVideo(
   episodeToken: string,
   videoFile: File,
-  token: string,
 ): Promise<UploadResponse> {
+  const token = await getMachineToken()
   const formData = new FormData()
   formData.append('video', videoFile)
   return apiUploadFile<UploadResponse>(
@@ -145,8 +154,8 @@ export async function uploadEpisodeVideo(
 export async function uploadPodcastCover(
   podcastTitle: string,
   imageFile: File,
-  token: string,
 ): Promise<Podcast> {
+  const token = await getMachineToken()
   const formData = new FormData()
   formData.append('image', imageFile)
   return apiUploadFile<Podcast>(
@@ -159,8 +168,8 @@ export async function uploadPodcastCover(
 export async function uploadEpisodeThumbnail(
   episodeToken: string,
   imageFile: File,
-  token: string,
 ): Promise<Episode> {
+  const token = await getMachineToken()
   const formData = new FormData()
   formData.append('image', imageFile)
   return apiUploadFile<Episode>(

@@ -75,7 +75,7 @@ export default function VideoUpload() {
     setSuccess('')
     setUploading(true)
     try {
-      const result = await uploadEpisodeVideo(episodeToken, videoFile, token)
+      const result = await uploadEpisodeVideo(episodeToken, videoFile)
       setSuccess(
         'Upload queued successfully! The episode will be published automatically once processing is complete.',
       )

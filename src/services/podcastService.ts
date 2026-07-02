@@ -1,172 +1,486 @@
-import { serverGet, serverPost, getExternalToken } from './externalApi'
+import { Pool } from "pg";
+
+let _pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (!_pool) {
+    _pool = new Pool({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    });
+  }
+  return _pool;
+}
 
 export interface PodcastCategory {
-  id: string
-  name: string
-  description: string
-  created_at: string
-  updated_at: string
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Podcast {
-  id: string
-  producer_id: string
-  podcast_category_id: string
-  title: string
-  description: string
-  cover_image_url: string
-  category: PodcastCategory
-  created_at: string
-  updated_at: string
+  id: string;
+  user_id: string;
+  podcast_category_id: string | null;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  category?: PodcastCategory | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Episode {
-  id: string
-  podcast_id: string
-  title: string
-  description: string
-  masked_video_token: string
-  status: 'pending' | 'processing' | 'published' | 'failed'
-  duration_seconds: number
-  thumbnail_url: string
-  published_at: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface UploadResponse {
-  message: string
-  status: string
-  episode: Episode
-  player_url: string
+  id: string;
+  podcast_id: string;
+  title: string;
+  description: string | null;
+  masked_video_token: string;
+  status: string;
+  duration_seconds: number | null;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  play_count: number;
 }
 
 export async function fetchCategories(): Promise<PodcastCategory[]> {
-  return serverGet<PodcastCategory[]>('/categories', { machine: true })
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id, name, description, created_at, updated_at
+     FROM public.podcast_categories
+     WHERE deleted_at IS NULL
+     ORDER BY name ASC`,
+  );
+  return result.rows;
 }
 
-export async function createPodcast(
-  data: {
-    email: string
-    title: string
-    description?: string
-    category_name?: string
-    cover_image_url?: string
-  },
-  userToken: string,
-): Promise<Podcast> {
-  return serverPost<Podcast>('/podcasts', data, { userToken })
+export async function getCategoryByName(
+  name: string,
+): Promise<PodcastCategory> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id, name, description, created_at, updated_at
+     FROM public.podcast_categories
+     WHERE LOWER(name) = LOWER($1) AND deleted_at IS NULL`,
+    [name.trim()],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("category not found");
+  }
+  return result.rows[0];
 }
 
-export async function listMyPodcasts(
-  userToken: string,
-  producerEmail?: string,
+export async function createCategory(
+  name: string,
+  description: string | null,
+): Promise<PodcastCategory> {
+  const pool = getPool();
+  const result = await pool.query(
+    `INSERT INTO public.podcast_categories (name, description)
+     VALUES ($1, $2)
+     RETURNING id, name, description, created_at, updated_at`,
+    [name, description],
+  );
+  return result.rows[0];
+}
+
+export async function updateCategory(
+  id: string,
+  name: string,
+  description: string | null,
+): Promise<PodcastCategory> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE public.podcast_categories
+     SET name = $2, description = $3, updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING id, name, description, created_at, updated_at`,
+    [id, name, description],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("category not found");
+  }
+  return result.rows[0];
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE public.podcast_categories
+     SET deleted_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    throw new Error("category not found");
+  }
+}
+
+export async function resolveCategoryIDByName(
+  name: string,
+): Promise<string> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id FROM public.podcast_categories
+     WHERE LOWER(name) = LOWER($1) AND deleted_at IS NULL`,
+    [name.trim()],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("category not found");
+  }
+  return result.rows[0].id;
+}
+
+const podcastCols = `id, user_id, podcast_category_id, title, description, cover_image_url, created_at, updated_at`;
+
+export async function resolveUserIDByEmail(email: string): Promise<string> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id FROM public.users
+     WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL`,
+    [email.trim()],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("user not found");
+  }
+  return result.rows[0].id;
+}
+
+export async function resolvePodcastIDByTitle(
+  title: string,
+): Promise<string> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id FROM public.podcasts
+     WHERE LOWER(title) = LOWER($1) AND deleted_at IS NULL`,
+    [title.trim()],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("podcast not found");
+  }
+  return result.rows[0].id;
+}
+
+export async function createPodcast(data: {
+  email: string;
+  title: string;
+  description?: string;
+  category_name?: string;
+  cover_image_url?: string;
+}): Promise<Podcast> {
+  const pool = getPool();
+
+  const userID = await resolveUserIDByEmail(data.email);
+
+  let categoryID: string | null = null;
+  if (data.category_name) {
+    categoryID = await resolveCategoryIDByName(data.category_name);
+  }
+
+  const result = await pool.query(
+    `INSERT INTO public.podcasts (user_id, podcast_category_id, title, description, cover_image_url)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING ${podcastCols}`,
+    [
+      userID,
+      categoryID,
+      data.title,
+      data.description ?? null,
+      data.cover_image_url ?? null,
+    ],
+  );
+  return result.rows[0];
+}
+
+export async function listAllPodcasts(): Promise<Podcast[]> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${podcastCols}
+     FROM public.podcasts
+     WHERE deleted_at IS NULL
+     ORDER BY created_at DESC`,
+  );
+  return result.rows;
+}
+
+export async function listPodcastsByUserID(
+  userID: string,
 ): Promise<Podcast[]> {
-  const query = producerEmail ? `?producer_email=${encodeURIComponent(producerEmail)}` : ''
-  return serverGet<Podcast[]>(`/podcasts/mine${query}`, { userToken })
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${podcastCols}
+     FROM public.podcasts
+     WHERE user_id = $1 AND deleted_at IS NULL
+     ORDER BY created_at DESC`,
+    [userID],
+  );
+  return result.rows;
+}
+
+export async function getPodcastByID(id: string): Promise<Podcast> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${podcastCols}
+     FROM public.podcasts
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("podcast not found");
+  }
+  return result.rows[0];
 }
 
 export async function getPodcastByTitle(title: string): Promise<Podcast> {
-  return serverGet<Podcast>(`/podcasts/${encodeURIComponent(title)}`, { machine: true })
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT p.${podcastCols},
+            jsonb_build_object(
+              'id', pc.id,
+              'name', pc.name,
+              'description', pc.description,
+              'created_at', pc.created_at,
+              'updated_at', pc.updated_at
+            ) AS category
+     FROM public.podcasts p
+     LEFT JOIN public.podcast_categories pc ON pc.id = p.podcast_category_id AND pc.deleted_at IS NULL
+     WHERE LOWER(p.title) = LOWER($1) AND p.deleted_at IS NULL`,
+    [title.trim()],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("podcast not found");
+  }
+  return result.rows[0];
 }
 
-export async function uploadPodcastCover(
-  title: string,
-  formData: FormData,
-  userToken: string,
+export async function updatePodcast(
+  id: string,
+  data: {
+    title: string;
+    description?: string;
+    category_name?: string;
+    cover_image_url?: string;
+  },
 ): Promise<Podcast> {
-  return serverUploadFile<Podcast>(`/podcasts/${encodeURIComponent(title)}/cover`, formData, { userToken })
+  const pool = getPool();
+
+  let categoryID: string | null = null;
+  if (data.category_name) {
+    categoryID = await resolveCategoryIDByName(data.category_name);
+  }
+
+  const result = await pool.query(
+    `UPDATE public.podcasts
+     SET podcast_category_id = $2, title = $3, description = $4, cover_image_url = $5, updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING ${podcastCols}`,
+    [id, categoryID, data.title, data.description ?? null, data.cover_image_url ?? null],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("podcast not found");
+  }
+  return result.rows[0];
 }
 
-export async function listEpisodes(podcastTitle: string): Promise<Episode[]> {
-  return serverGet<Episode[]>(`/podcasts/${encodeURIComponent(podcastTitle)}/episodes`, { machine: true })
+export async function updatePodcastCoverImage(
+  id: string,
+  base64Image: string,
+): Promise<Podcast> {
+  const pool = getPool();
+  await pool.query(
+    `UPDATE public.podcasts
+     SET cover_image_url = $2, updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id, base64Image],
+  );
+  return getPodcastByID(id);
+}
+
+export async function deletePodcast(id: string): Promise<void> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE public.podcasts
+     SET deleted_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    throw new Error("podcast not found");
+  }
+}
+
+const episodeCols = `id, podcast_id, title, description, masked_video_token, status, duration_seconds, thumbnail_url, published_at, created_at, updated_at`;
+
+const episodeSelectCols = `${episodeCols},
+  (SELECT COUNT(*) FROM public.play_events pe WHERE pe.episode_id = e.id) AS play_count`;
+
+const episodeReturnCols = `${episodeCols},
+  (SELECT COUNT(*) FROM public.play_events pe WHERE pe.episode_id = id) AS play_count`;
+
+export async function listEpisodesByPodcastID(
+  podcastID: string,
+): Promise<Episode[]> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${episodeSelectCols}
+     FROM public.episodes e
+     WHERE e.podcast_id = $1 AND e.deleted_at IS NULL
+     ORDER BY e.created_at DESC`,
+    [podcastID],
+  );
+  return result.rows;
+}
+
+export async function listEpisodes(
+  podcastTitle: string,
+): Promise<Episode[]> {
+  const podcastID = await resolvePodcastIDByTitle(podcastTitle);
+  return listEpisodesByPodcastID(podcastID);
 }
 
 export async function createEpisode(
   podcastTitle: string,
   data: {
-    title: string
-    description?: string
-    duration_seconds?: number
+    title: string;
+    description?: string;
+    duration_seconds?: number;
   },
-  userToken: string,
 ): Promise<Episode> {
-  return serverPost<Episode>(`/podcasts/${encodeURIComponent(podcastTitle)}/episodes`, data, { userToken })
+  const pool = getPool();
+  const podcastID = await resolvePodcastIDByTitle(podcastTitle);
+
+  const maskedToken = crypto.randomUUID();
+
+  const result = await pool.query(
+    `INSERT INTO public.episodes
+       (podcast_id, title, description, masked_video_token, duration_seconds)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING ${episodeReturnCols}`,
+    [
+      podcastID,
+      data.title,
+      data.description ?? null,
+      maskedToken,
+      data.duration_seconds ?? null,
+    ],
+  );
+  return result.rows[0];
 }
 
-export async function getEpisode(episodeToken: string): Promise<Episode> {
-  return serverGet<Episode>(`/episodes/${encodeURIComponent(episodeToken)}`, { machine: true })
+export async function getEpisodeByID(id: string): Promise<Episode> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${episodeSelectCols}
+     FROM public.episodes e
+     WHERE e.id = $1 AND e.deleted_at IS NULL`,
+    [id],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("episode not found");
+  }
+  return result.rows[0];
 }
 
-export async function uploadEpisodeVideo(
-  episodeToken: string,
-  formData: FormData,
-  userToken: string,
-): Promise<UploadResponse> {
-  return serverUploadFile<UploadResponse>(
-    `/episodes/${encodeURIComponent(episodeToken)}/upload`,
-    formData,
-    { userToken },
-  )
-}
-
-export async function uploadEpisodeThumbnail(
-  episodeToken: string,
-  formData: FormData,
-  userToken: string,
+export async function getEpisodeByToken(
+  token: string,
 ): Promise<Episode> {
-  return serverUploadFile<Episode>(
-    `/episodes/${encodeURIComponent(episodeToken)}/thumbnail`,
-    formData,
-    { userToken },
-  )
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT ${episodeSelectCols}
+     FROM public.episodes e
+     WHERE e.masked_video_token = $1 AND e.deleted_at IS NULL`,
+    [token],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("episode not found");
+  }
+  return result.rows[0];
 }
 
-async function serverUploadFile<T>(
-  endpoint: string,
-  formData: FormData,
-  auth?: { machine?: boolean; userToken?: string },
-): Promise<T> {
-  
-  const API_URL = process.env.PODCAST_BSE_URL;
-
-  if (!API_URL) {
-    throw new Error('Missing PODCAST_BSE_URL')
+export async function updateEpisode(
+  id: string,
+  data: {
+    title: string;
+    description?: string;
+    thumbnail_url?: string;
+    duration_seconds?: number;
+  },
+): Promise<Episode> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE public.episodes
+     SET title = $2, description = $3, thumbnail_url = $4, duration_seconds = $5, updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING ${episodeReturnCols}`,
+    [id, data.title, data.description ?? null, data.thumbnail_url ?? null, data.duration_seconds ?? null],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("episode not found");
   }
+  return result.rows[0];
+}
 
-  let token: string | undefined
-  if (auth?.userToken) {
-    token = auth.userToken
-  } else if (auth?.machine) {
-    const tokenData = await getExternalToken()
-    token = tokenData.token
+export async function updateEpisodeThumbnail(
+  id: string,
+  base64Image: string,
+): Promise<Episode> {
+  const pool = getPool();
+  await pool.query(
+    `UPDATkill 213391 E public.episodes
+     SET thumbnail_url = $2, updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id, base64Image],
+  );
+  return getEpisodeByID(id);
+}
+
+export async function deleteEpisode(id: string): Promise<void> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE public.episodes
+     SET deleted_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    throw new Error("episode not found");
   }
+}
 
-  const headers: Record<string, string> = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+export async function getPodcastOwnerByEpisodeID(
+  episodeID: string,
+): Promise<string> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT p.user_id FROM public.podcasts p
+     JOIN public.episodes e ON e.podcast_id = p.id
+     WHERE e.id = $1 AND e.deleted_at IS NULL AND p.deleted_at IS NULL`,
+    [episodeID],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("episode or podcast not found");
   }
+  return result.rows[0].user_id;
+}
 
-  const response = await fetch(`${API_URL}/api/v1${endpoint}`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  })
-
-  if (response.status === 401) {
-    throw new Error('401 Unauthorized')
+export async function resolveEpisodeIDByToken(
+  token: string,
+): Promise<string> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT id FROM public.episodes
+     WHERE masked_video_token = $1 AND deleted_at IS NULL`,
+    [token],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("episode not found");
   }
-
-  if (response.status === 404) {
-    throw new Error('404 Not Found')
-  }
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`External API error: ${response.status} - ${text}`)
-  }
-
-  if (response.status === 204) return undefined as T
-
-  return response.json()
+  return result.rows[0].id;
 }
