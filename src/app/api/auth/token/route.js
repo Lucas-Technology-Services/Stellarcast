@@ -17,10 +17,7 @@ export async function POST(request) {
     const result = await generateToken(clientId, secret);
 
     return NextResponse.json(
-      {
-        token: result.token,
-        client_id: result.client_id,
-      },
+      { token: result.token },
       { status: 201 },
     );
   } catch (err) {
