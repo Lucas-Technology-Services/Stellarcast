@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CirclePlay, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { createPodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
 import { ApiError } from '@/lib/api-client'
 import {
@@ -16,7 +17,6 @@ import {
   LogoIcon,
   LogoText,
   Nav,
-  NavAvatar,
   PageContent,
   TitleSection,
   TitleIconWrapper,
@@ -187,25 +187,7 @@ export default function CreatePodcast() {
         </Link>
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
-          <NavAvatar
-            as="div"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-              border: '2px solid rgba(167, 139, 250, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 700,
-            }}
-            title={user?.email || 'User'}
-          >
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </NavAvatar>
+          <UserMenu />
         </Nav>
       </Header>
 

@@ -4,13 +4,13 @@ import React, { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { createEpisode, uploadEpisodeThumbnail } from '@/lib/api'
 import {
   Wrapper,
   Header,
   LogoText,
   Nav,
-  UserBadge,
   Content,
   PageTitle,
   BackLink,
@@ -82,9 +82,7 @@ export default function CreateEpisode() {
         <LogoText>StellarCast</LogoText>
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 

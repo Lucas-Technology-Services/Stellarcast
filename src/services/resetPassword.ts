@@ -1,38 +1,27 @@
-import { getExternalToken } from "./externalApi";
+import { Pool } from 'pg'
+
+let _pool: Pool | null = null
+
+function getPool(): Pool {
+  if (!_pool) {
+    _pool = new Pool({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    })
+  }
+  return _pool
+}
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  const API_URL = process.env.PODCAST_BSE_URL;
+  const result = await getPool().query(
+    `SELECT id FROM public.users WHERE email = $1 AND deleted_at IS NULL`,
+    [email],
+  )
 
-  if (!API_URL) {
-    throw new Error("Missing PODCAST_BSE_URL");
-  }
-
-  const tokenData = await getExternalToken();
-  const jwt = tokenData.token;
-
-  if (!jwt) {
-    throw new Error("Failed to obtain JWT from external API");
-  }
-
-  const response = await fetch(`${API_URL}/api/v1/users/reset-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${jwt}`
-    },
-    body: JSON.stringify({ email })
-  });
-
-  if (response.status === 401) {
-    throw new Error("401 Unauthorized");
-  }
-
-  if (response.status === 404) {
-    throw new Error("404 Not Found");
-  }
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`External API error: ${response.status} - ${text}`);
+  if (result.rows.length === 0) {
+    throw new Error('email not found')
   }
 }

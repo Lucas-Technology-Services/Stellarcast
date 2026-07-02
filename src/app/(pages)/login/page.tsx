@@ -147,10 +147,11 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         await register(email, password, accessType)
+        router.push(accessType === 'viewer' ? '/home' : '/podcasts')
       } else {
         await login(email, password)
+        router.push('/podcasts')
       }
-      router.push('/podcasts')
     } catch (err) {
       setError(err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'An unexpected error occurred')
     } finally {
