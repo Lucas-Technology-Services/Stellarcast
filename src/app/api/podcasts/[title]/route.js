@@ -28,6 +28,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(data, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("GET /api/podcasts/[title] error:", err);
 
     if (message === "token not found or expired" || message === "invalid token") {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });

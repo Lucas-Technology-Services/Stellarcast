@@ -1,12 +1,14 @@
 'use client'
 
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import bgImage from '@/app/assets/background_img.jpg'
-import { Mic, BarChart3, Globe, Upload, Share2, Headphones } from 'lucide-react'
+import { Mic, BarChart3, Globe, Upload, Share2, Headphones, Play } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
+import { apiGet, apiPost } from '@/lib/api-client'
 import {
   Page,
   Header,
@@ -103,9 +105,39 @@ const steps = [
   { num: '04', title: 'Grow & Earn', desc: 'Track performance, engage your audience, and turn your passion into revenue.' },
 ]
 
+interface FeedItem {
+  id: string
+  podcast_id: string
+  episode_id: string
+  podcast_title: string
+  podcast_cover_url: string
+  episode_title: string
+  episode_token: string
+  episode_thumbnail: string
+  producer_email: string
+  created_at: string
+}
+
 export default function HomePage() {
   const router = useRouter()
   const { user, token } = useAuth()
+  const [feeds, setFeeds] = useState<FeedItem[]>([])
+  const [feedsLoading, setFeedsLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadFeeds() {
+      try {
+        const { token: machineToken } = await apiPost<{ token: string }>('/api/auth/token', {})
+        const data = await apiGet<FeedItem[]>('/api/feeds', machineToken)
+        setFeeds(data)
+      } catch {
+        
+      } finally {
+        setFeedsLoading(false)
+      }
+    }
+    loadFeeds()
+  }, [])
 
   return (
     <Page>
@@ -119,7 +151,11 @@ export default function HomePage() {
         <Nav>
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
-          <NavCta href="#cta">Get Started</NavCta>
+          {token && user ? (
+            <NavCta href="/podcasts/mine">Dashboard</NavCta>
+          ) : (
+            <NavCta href="#cta">Get Started</NavCta>
+          )}
           {token && user ? <UserMenu /> : <a href="/login">Login</a>}
         </Nav>
       </Header>
@@ -167,6 +203,66 @@ export default function HomePage() {
           <ScrollArrow />
         </ScrollIndicator>
       </Hero>
+
+      <section style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '40px 20px' }}>
+        {feedsLoading ? (
+          <p style={{ color: '#94a3b8', textAlign: 'center' }}>Loading...</p>
+        ) : feeds.length === 0 ? null : (
+          <>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 24 }}>Latest Episodes</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+              {feeds.map((feed) => (
+                <div
+                  key={feed.id}
+                  onClick={() => router.push(token ? `/watch/${feed.episode_token}` : '/login')}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div
+                    style={{
+                      background: 'rgba(15, 15, 40, 0.85)',
+                      border: '1px solid rgba(124, 58, 237, 0.2)',
+                      borderRadius: 16,
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s, transform 0.2s',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(124, 58, 237, 0.5)'
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(124, 58, 237, 0.2)'
+                      e.currentTarget.style.transform = 'none'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        aspectRatio: '16/9',
+                        background: feed.podcast_cover_url
+                          ? `url(${feed.podcast_cover_url}) center/cover`
+                          : 'linear-gradient(135deg, #1e1b4b, #312e81)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {!feed.podcast_cover_url && (
+                        <Play size={40} style={{ color: 'rgba(167, 139, 250, 0.4)' }} />
+                      )}
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>{feed.episode_title}</p>
+                      <p style={{ fontSize: 13, color: '#a78bfa', marginBottom: 2 }}>{feed.podcast_title}</p>
+                      <p style={{ fontSize: 12, color: '#64748b' }}>{feed.producer_email}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       <FeaturesSection id="features">
         <SectionHeader>

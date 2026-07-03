@@ -129,6 +129,52 @@ function xmlEsc(s: string): string {
     .replace(/'/g, '&apos;')
 }
 
+export interface FeedEntry {
+  id: string
+  podcast_id: string
+  episode_id: string
+  podcast_title: string
+  podcast_cover_url: string
+  episode_title: string
+  episode_token: string
+  episode_thumbnail: string
+  producer_email: string
+  created_at: string
+}
+
+export async function listFeeds(): Promise<FeedEntry[]> {
+  const result = await getPool().query(
+    `SELECT f.id, f.podcast_id, f.episode_id,
+            p.title AS podcast_title,
+            p.cover_image_url AS podcast_cover_url,
+            e.title AS episode_title,
+            e.masked_video_token AS episode_token,
+            e.thumbnail_url AS episode_thumbnail,
+            u.email AS producer_email,
+            f.created_at
+     FROM public.feeds f
+     JOIN public.podcasts p ON p.id = f.podcast_id AND p.deleted_at IS NULL
+     JOIN public.episodes e ON e.id = f.episode_id AND e.deleted_at IS NULL
+     JOIN public.users u ON u.id = p.user_id
+     WHERE f.deleted_at IS NULL
+       AND e.status = 'published'
+     ORDER BY f.created_at DESC`,
+  )
+
+  return result.rows.map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    podcast_id: row.podcast_id as string,
+    episode_id: row.episode_id as string,
+    podcast_title: row.podcast_title as string,
+    podcast_cover_url: (row.podcast_cover_url as string) || '',
+    episode_title: row.episode_title as string,
+    episode_token: row.episode_token as string,
+    episode_thumbnail: (row.episode_thumbnail as string) || '',
+    producer_email: row.producer_email as string,
+    created_at: row.created_at as string,
+  }))
+}
+
 export async function insertFeed(
   podcastId: string,
   episodeId: string,

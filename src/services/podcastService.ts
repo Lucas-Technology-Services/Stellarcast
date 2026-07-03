@@ -433,7 +433,7 @@ export async function updateEpisodeThumbnail(
 ): Promise<Episode> {
   const pool = getPool();
   await pool.query(
-    `UPDATkill 213391 E public.episodes
+    `UPDATE public.episodes
      SET thumbnail_url = $2, updated_at = NOW()
      WHERE id = $1 AND deleted_at IS NULL`,
     [id, base64Image],
@@ -468,6 +468,39 @@ export async function getPodcastOwnerByEpisodeID(
     throw new Error("episode or podcast not found");
   }
   return result.rows[0].user_id;
+}
+
+export async function setYoutubeVideoId(
+  episodeId: string,
+  youtubeVideoId: string,
+): Promise<Episode> {
+  const pool = getPool()
+  const result = await pool.query(
+    `UPDATE public.episodes
+     SET youtube_video_id = $2, status = 'published', published_at = NOW(), updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING ${episodeReturnCols}`,
+    [episodeId, youtubeVideoId],
+  )
+  if (result.rows.length === 0) {
+    throw new Error('episode not found')
+  }
+  return result.rows[0]
+}
+
+export async function getEpisodeYoutubeVideoId(
+  episodeId: string,
+): Promise<string> {
+  const pool = getPool()
+  const result = await pool.query(
+    `SELECT youtube_video_id FROM public.episodes
+     WHERE id = $1 AND deleted_at IS NULL AND youtube_video_id IS NOT NULL`,
+    [episodeId],
+  )
+  if (result.rows.length === 0) {
+    throw new Error('episode not found or no video')
+  }
+  return result.rows[0].youtube_video_id
 }
 
 export async function resolveEpisodeIDByToken(

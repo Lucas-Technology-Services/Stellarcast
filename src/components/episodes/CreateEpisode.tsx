@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
-import { createEpisode, uploadEpisodeThumbnail } from '@/lib/api'
+import { createEpisode, uploadEpisodeThumbnail, uploadEpisodeVideo, createFeed } from '@/lib/api'
 import {
   Wrapper,
   Header,
@@ -33,6 +33,7 @@ export default function CreateEpisode() {
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -56,7 +57,14 @@ export default function CreateEpisode() {
 
       if (thumbnailFile) {
         await uploadEpisodeThumbnail(episode.masked_video_token, thumbnailFile)
+          .catch(() => {})
       }
+
+      if (videoFile) {
+        await uploadEpisodeVideo(episode.masked_video_token, videoFile)
+      }
+
+      await createFeed(episode.podcast_id, episode.id).catch(() => {})
 
       router.push(`/podcasts/${encodeURIComponent(title)}/episodes`)
     } catch (err) {
@@ -143,6 +151,17 @@ export default function CreateEpisode() {
               type="file"
               accept="image/*"
               onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+              style={{ padding: 8 }}
+            />
+          </FieldGroup>
+
+          <FieldGroup>
+            <Label htmlFor="ep-video">Video Upload (mp4, mov, avi)</Label>
+            <Input
+              id="ep-video"
+              type="file"
+              accept="video/mp4,video/quicktime,video/x-msvideo"
+              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
               style={{ padding: 8 }}
             />
           </FieldGroup>

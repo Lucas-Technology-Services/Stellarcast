@@ -1484,7 +1484,114 @@ function buildSpec() {
           },
         },
       },
+      "/episodes/{token}/streaming-token": {
+        get: {
+          tags: ["Episodes"],
+          summary: "Get a streaming token for an episode",
+          description:
+            "Generates an HMAC-SHA256 signed streaming token (4h TTL) for the YouTube video linked to the episode. The token masks the real YouTube video ID. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+            {
+              name: "token",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description: "Masked video token of the episode",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Streaming token generated",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      streaming_token: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Episode not found or no video",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
       "/feeds": {
+        get: {
+          tags: ["Feeds"],
+          summary: "List all feed entries",
+          description:
+            "Returns all published feed entries with podcast and episode data. Used by the Home page to display the latest episodes. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "List of feed entries",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        podcast_id: { type: "string", format: "uuid" },
+                        episode_id: { type: "string", format: "uuid" },
+                        podcast_title: { type: "string" },
+                        podcast_cover_url: { type: "string" },
+                        episode_title: { type: "string" },
+                        episode_token: { type: "string" },
+                        episode_thumbnail: { type: "string" },
+                        producer_email: { type: "string" },
+                        created_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
         post: {
           tags: ["Feeds"],
           summary: "Create a feed entry",
@@ -1626,6 +1733,75 @@ function buildSpec() {
             },
             "500": {
               description: "Failed to generate feed",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/player/{token}": {
+        get: {
+          tags: ["Player"],
+          summary: "Get episode data and video embed URL",
+          description:
+            "Returns the episode metadata and a YouTube embed URL for playback. The real YouTube video ID is never exposed to the client. Requires a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+            {
+              name: "token",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description: "Masked video token of the episode",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Episode data with embed URL",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      episode: {
+                        type: "object",
+                        properties: {
+                          id: { type: "string", format: "uuid" },
+                          title: { type: "string" },
+                          description: { type: "string" },
+                          thumbnail_url: { type: "string" },
+                          duration_seconds: { type: "number" },
+                          published_at: { type: "string" },
+                          status: { type: "string" },
+                          masked_video_token: { type: "string" },
+                        },
+                      },
+                      embed_url: { type: "string", nullable: true },
+                    },
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Episode not found",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/Error" },
