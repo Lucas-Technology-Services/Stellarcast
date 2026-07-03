@@ -139,6 +139,7 @@ export async function resolveCategoryIDByName(
 }
 
 const podcastCols = `id, user_id, podcast_category_id, title, description, cover_image_url, created_at, updated_at`;
+const podcastColsPrefixed = `p.id, p.user_id, p.podcast_category_id, p.title, p.description, p.cover_image_url, p.created_at, p.updated_at`;
 
 export async function resolveUserIDByEmail(email: string): Promise<string> {
   const pool = getPool();
@@ -241,7 +242,7 @@ export async function getPodcastByID(id: string): Promise<Podcast> {
 export async function getPodcastByTitle(title: string): Promise<Podcast> {
   const pool = getPool();
   const result = await pool.query(
-    `SELECT p.${podcastCols},
+    `SELECT ${podcastColsPrefixed},
             jsonb_build_object(
               'id', pc.id,
               'name', pc.name,
@@ -470,9 +471,9 @@ export async function getPodcastOwnerByEpisodeID(
   return result.rows[0].user_id;
 }
 
-export async function setYoutubeVideoId(
+export async function setEpisodeVideoUrl(
   episodeId: string,
-  youtubeVideoId: string,
+  videoUrl: string,
 ): Promise<Episode> {
   const pool = getPool()
   const result = await pool.query(
@@ -480,7 +481,7 @@ export async function setYoutubeVideoId(
      SET youtube_video_id = $2, status = 'published', published_at = NOW(), updated_at = NOW()
      WHERE id = $1 AND deleted_at IS NULL
      RETURNING ${episodeReturnCols}`,
-    [episodeId, youtubeVideoId],
+    [episodeId, videoUrl],
   )
   if (result.rows.length === 0) {
     throw new Error('episode not found')
@@ -488,7 +489,7 @@ export async function setYoutubeVideoId(
   return result.rows[0]
 }
 
-export async function getEpisodeYoutubeVideoId(
+export async function getEpisodeVideoUrl(
   episodeId: string,
 ): Promise<string> {
   const pool = getPool()
@@ -501,6 +502,22 @@ export async function getEpisodeYoutubeVideoId(
     throw new Error('episode not found or no video')
   }
   return result.rows[0].youtube_video_id
+}
+
+export async function getPodcastTitleByEpisodeId(
+  episodeId: string,
+): Promise<string> {
+  const pool = getPool()
+  const result = await pool.query(
+    `SELECT p.title FROM public.podcasts p
+     JOIN public.episodes e ON e.podcast_id = p.id
+     WHERE e.id = $1 AND e.deleted_at IS NULL AND p.deleted_at IS NULL`,
+    [episodeId],
+  )
+  if (result.rows.length === 0) {
+    throw new Error('episode or podcast not found')
+  }
+  return result.rows[0].title
 }
 
 export async function resolveEpisodeIDByToken(

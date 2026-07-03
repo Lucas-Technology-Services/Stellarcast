@@ -19,7 +19,7 @@ interface EpisodeData {
 
 interface PlayerResponse {
   episode: EpisodeData
-  embed_url: string | null
+  video_url: string | null
 }
 
 export default function WatchPage() {
@@ -97,14 +97,16 @@ export default function WatchPage() {
           <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>{data.episode.description}</p>
         )}
 
-        {data.embed_url ? (
-          <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', borderRadius: 16, overflow: 'hidden', background: '#000', marginBottom: 24 }}>
-            <iframe
-              src={data.embed_url}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        {data.video_url ? (
+          <div style={{ position: 'relative', width: '100%', borderRadius: 16, overflow: 'hidden', background: '#000', marginBottom: 24 }}>
+            <video
+              src={data.video_url}
+              controls
+              style={{ width: '100%', display: 'block', maxHeight: '70vh' }}
+              playsInline
+            >
+              Your browser does not support the video tag.
+            </video>
           </div>
         ) : (
           <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 16, background: '#1a1a3e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>

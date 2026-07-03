@@ -37,6 +37,8 @@ export default function CreateEpisode() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
+
   useEffect(() => {
     if (!isLoading && !token) {
       router.push('/login')
@@ -47,6 +49,12 @@ export default function CreateEpisode() {
     e.preventDefault()
     if (!token) return
     setError('')
+
+    if (videoFile && videoFile.size > MAX_VIDEO_SIZE) {
+      setError('Video file exceeds the 300 MB limit')
+      return
+    }
+
     setSaving(true)
     try {
       const episode = await createEpisode(title, {

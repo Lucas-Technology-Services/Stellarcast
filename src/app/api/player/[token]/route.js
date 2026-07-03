@@ -3,9 +3,9 @@ import { validateToken } from "@/services/auth_service";
 import {
   resolveEpisodeIDByToken,
   getEpisodeByToken,
-  getEpisodeYoutubeVideoId,
+  getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { generatePlayerToken } from "@/services/player_service";
+import { buildVideoUrl } from "@/services/minio_service";
 
 export async function GET(request, { params }) {
   try {
@@ -20,13 +20,10 @@ export async function GET(request, { params }) {
     const episode = await getEpisodeByToken(token);
     const episodeId = episode.id;
 
-    let embedUrl = null;
+    let videoUrl = null;
     try {
-      const youtubeVideoId = await getEpisodeYoutubeVideoId(episodeId);
-      const streamingToken = generatePlayerToken(youtubeVideoId);
-      const baseUrl =
-        process.env.PLATFORM_BASE_URL || "https://stellarcast.onrender.com";
-      embedUrl = `https://www.youtube.com/embed/${youtubeVideoId}?origin=${encodeURIComponent(baseUrl)}&enablejsapi=1&rel=0&modestbranding=1`;
+      const objectKey = await getEpisodeVideoUrl(episodeId);
+      videoUrl = buildVideoUrl(objectKey);
     } catch {
       // no video uploaded yet
     }
@@ -43,7 +40,7 @@ export async function GET(request, { params }) {
           status: episode.status,
           masked_video_token: episode.masked_video_token,
         },
-        embed_url: embedUrl,
+        video_url: videoUrl,
       },
       { status: 200 },
     );

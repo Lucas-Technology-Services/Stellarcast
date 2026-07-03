@@ -3,12 +3,15 @@ import { validateToken } from "@/services/auth_service";
 import {
   resolveEpisodeIDByToken,
   getEpisodeByID,
-  setYoutubeVideoId,
+  setEpisodeVideoUrl,
+  getPodcastTitleByEpisodeId,
 } from "@/services/podcastService";
-import { uploadToYouTube } from "@/services/youtube_service";
+import { uploadVideo, buildVideoUrl } from "@/services/minio_service";
 import { generatePlayerToken } from "@/services/player_service";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import path from "path";
+
+const MAX_VIDEO_SIZE = 300 * 1024 * 1024;
 
 export async function POST(request, { params }) {
   try {
@@ -22,6 +25,7 @@ export async function POST(request, { params }) {
     const episodeId = await resolveEpisodeIDByToken(token);
 
     const episode = await getEpisodeByID(episodeId);
+    const podcastTitle = await getPodcastTitleByEpisodeId(episodeId);
 
     const formData = await request.formData();
     const videoFile = formData.get("video");
@@ -30,6 +34,13 @@ export async function POST(request, { params }) {
       return NextResponse.json(
         { error: "video file is required" },
         { status: 400 },
+      );
+    }
+
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      return NextResponse.json(
+        { error: "video file exceeds the 300 MB limit" },
+        { status: 413 },
       );
     }
 
@@ -42,15 +53,17 @@ export async function POST(request, { params }) {
     await writeFile(filePath, buffer);
 
     try {
-      const youtubeVideoId = await uploadToYouTube(
+      const objectKey = await uploadVideo(
         filePath,
-        episode.title,
-        episode.description || "",
+        podcastTitle,
+        episodeId,
+        ext,
       );
 
-      await setYoutubeVideoId(episodeId, youtubeVideoId);
+      const videoUrl = buildVideoUrl(objectKey);
+      await setEpisodeVideoUrl(episodeId, videoUrl);
 
-      const playerToken = generatePlayerToken(youtubeVideoId);
+      const playerToken = generatePlayerToken(objectKey);
       const baseUrl =
         process.env.PLATFORM_BASE_URL || "https://stellarcast.onrender.com";
       const playerUrl = `${baseUrl}/player/${playerToken}`;

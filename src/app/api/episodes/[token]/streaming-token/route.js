@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { validateToken } from "@/services/auth_service";
 import {
   resolveEpisodeIDByToken,
-  getEpisodeYoutubeVideoId,
+  getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { generatePlayerToken } from "@/services/player_service";
+import { buildVideoUrl } from "@/services/minio_service";
 
 export async function GET(request, { params }) {
   try {
@@ -17,11 +17,10 @@ export async function GET(request, { params }) {
     const { token } = await params;
     const episodeId = await resolveEpisodeIDByToken(token);
 
-    const youtubeVideoId = await getEpisodeYoutubeVideoId(episodeId);
+    const objectKey = await getEpisodeVideoUrl(episodeId);
+    const videoUrl = buildVideoUrl(objectKey);
 
-    const streamingToken = generatePlayerToken(youtubeVideoId);
-
-    return NextResponse.json({ streaming_token: streamingToken }, { status: 200 });
+    return NextResponse.json({ video_url: videoUrl }, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
 

@@ -137,6 +137,10 @@ export default function HomePage() {
       }
     }
     loadFeeds()
+
+    const interval = setInterval(loadFeeds, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
