@@ -4,13 +4,13 @@ import React, { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
-import { createEpisode, uploadEpisodeThumbnail } from '@/lib/api'
+import UserMenu from '@/components/UserMenu'
+import { createEpisode, uploadEpisodeThumbnail, uploadEpisodeVideo, createFeed } from '@/lib/api'
 import {
   Wrapper,
   Header,
   LogoText,
   Nav,
-  UserBadge,
   Content,
   PageTitle,
   BackLink,
@@ -33,8 +33,11 @@ export default function CreateEpisode() {
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
 
   useEffect(() => {
     if (!isLoading && !token) {
@@ -46,6 +49,12 @@ export default function CreateEpisode() {
     e.preventDefault()
     if (!token) return
     setError('')
+
+    if (videoFile && videoFile.size > MAX_VIDEO_SIZE) {
+      setError('Video file exceeds the 300 MB limit')
+      return
+    }
+
     setSaving(true)
     try {
       const episode = await createEpisode(title, {
@@ -56,7 +65,14 @@ export default function CreateEpisode() {
 
       if (thumbnailFile) {
         await uploadEpisodeThumbnail(episode.masked_video_token, thumbnailFile)
+          .catch(() => {})
       }
+
+      if (videoFile) {
+        await uploadEpisodeVideo(episode.masked_video_token, videoFile)
+      }
+
+      await createFeed(episode.podcast_id, episode.id).catch(() => {})
 
       router.push(`/podcasts/${encodeURIComponent(title)}/episodes`)
     } catch (err) {
@@ -82,9 +98,7 @@ export default function CreateEpisode() {
         <LogoText>StellarCast</LogoText>
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 
@@ -145,6 +159,17 @@ export default function CreateEpisode() {
               type="file"
               accept="image/*"
               onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+              style={{ padding: 8 }}
+            />
+          </FieldGroup>
+
+          <FieldGroup>
+            <Label htmlFor="ep-video">Video Upload (mp4, mov, avi)</Label>
+            <Input
+              id="ep-video"
+              type="file"
+              accept="video/mp4,video/quicktime,video/x-msvideo"
+              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
               style={{ padding: 8 }}
             />
           </FieldGroup>

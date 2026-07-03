@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Upload, CheckCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { uploadEpisodeVideo, getEpisode } from '@/lib/api'
 import type { Episode } from '@/lib/api'
 import {
@@ -11,7 +12,6 @@ import {
   Header,
   LogoText,
   Nav,
-  UserBadge,
   Content,
   PageTitle,
   BackLink,
@@ -57,20 +57,43 @@ export default function VideoUpload() {
     load()
   }, [episodeToken])
 
+  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
+
+  function isValidSize(file: File): boolean {
+    return file.size <= MAX_VIDEO_SIZE
+  }
+
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault()
     setDragOver(false)
     const file = e.dataTransfer.files?.[0]
-    if (file) setVideoFile(file)
+    if (file) {
+      if (!isValidSize(file)) {
+        setError('Video file exceeds the 300 MB limit')
+        return
+      }
+      setVideoFile(file)
+    }
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) setVideoFile(file)
+    if (file) {
+      if (!isValidSize(file)) {
+        setError('Video file exceeds the 300 MB limit')
+        setVideoFile(null)
+        return
+      }
+      setVideoFile(file)
+    }
   }
 
   async function handleUpload() {
     if (!token || !episodeToken || !videoFile) return
+    if (!isValidSize(videoFile)) {
+      setError('Video file exceeds the 300 MB limit')
+      return
+    }
     setError('')
     setSuccess('')
     setUploading(true)
@@ -106,9 +129,7 @@ export default function VideoUpload() {
         <LogoText>StellarCast</LogoText>
         <Nav>
           <Link href="/podcasts/mine">My Podcasts</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 
@@ -199,7 +220,7 @@ export default function VideoUpload() {
             ) : (
               <>
                 <Upload size={18} />
-                Upload to YouTube
+                Upload Video
               </>
             )}
           </Button>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Mic, Plus } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import UserMenu from '@/components/UserMenu'
 import { listMyPodcasts, type Podcast } from '@/lib/api'
 import styled from 'styled-components'
 
@@ -208,9 +209,7 @@ export default function PodcastList() {
         <LogoText>StellarCast</LogoText>
         <Nav>
           <Link href="/podcasts">Create Podcast</Link>
-          <UserBadge as="div" title={user?.email || 'User'}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </UserBadge>
+          <UserMenu />
         </Nav>
       </Header>
 
