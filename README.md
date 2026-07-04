@@ -4,7 +4,7 @@ Podcast management platform built with Next.js (App Router).
 
 ---
 
-## English
+
 
 ### Overview
 
