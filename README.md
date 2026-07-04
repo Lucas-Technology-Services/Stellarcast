@@ -119,8 +119,8 @@ Generates a machine-to-machine JWT token using client credentials.
 curl -X POST http://localhost:3000/api/auth/token \
   -H "Content-Type: application/json" \
   -d '{
-    "client_id": "lts_a7f_5202l",
-    "secret": "k9Hp4!2vN6rT1"
+    "client_id": "xxxxxxxxxx",
+    "secret": "xxxxxxxxxxxxxx"
   }'
 ```
 
