@@ -223,3 +223,157 @@ export const SuccessBox = styled.div`
   color: #86efac;
   font-size: 13px;
 `
+
+export const EditForm = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`
+
+export const EditInput = styled.input`
+  width: 100%;
+  background: rgba(10, 10, 30, 0.7);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #e2e8f0;
+  outline: none;
+  box-sizing: border-box;
+  &:focus {
+    border-color: rgba(124, 58, 237, 0.6);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+  }
+`
+
+export const EditTextarea = styled.textarea`
+  width: 100%;
+  background: rgba(10, 10, 30, 0.7);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #e2e8f0;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  box-sizing: border-box;
+  &:focus {
+    border-color: rgba(124, 58, 237, 0.6);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+  }
+`
+
+export const ActionsRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+`
+
+export const IconButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 8px;
+  color: #c4b5fd;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: rgba(124, 58, 237, 0.2); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+`
+
+export const DangerButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: rgba(239, 68, 68, 0.2); }
+`
+
+export const ConfirmGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`
+
+export const ConfirmButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: rgba(239, 68, 68, 0.3); }
+`
+
+export const CancelButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(100, 116, 139, 0.15);
+  border: 1px solid rgba(100, 116, 139, 0.25);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: rgba(100, 116, 139, 0.25); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+`
+
+export const PreviewThumb = styled.div<{ $hasThumb: boolean; $thumb: string | null }>`
+  width: 160px;
+  aspect-ratio: 16/9;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: ${({ $hasThumb, $thumb }) =>
+    $hasThumb && $thumb
+      ? `url(${$thumb}) center/cover`
+      : 'linear-gradient(135deg, #1e1b4b, #312e81)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  &:hover { transform: scale(1.03); }
+`
+
+export const PlayOverlay = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+  transition: background 0.2s;
+  ${PreviewThumb}:hover & {
+    background: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+  }
+`

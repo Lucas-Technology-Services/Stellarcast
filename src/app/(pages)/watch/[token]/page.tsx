@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Play, Film } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { apiGet, apiPost } from '@/lib/api-client'
 
@@ -30,6 +30,8 @@ export default function WatchPage() {
   const [data, setData] = useState<PlayerResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [videoError, setVideoError] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (!token) return
@@ -100,17 +102,70 @@ export default function WatchPage() {
         {data.video_url ? (
           <div style={{ position: 'relative', width: '100%', borderRadius: 16, overflow: 'hidden', background: '#000', marginBottom: 24 }}>
             <video
+              ref={videoRef}
               src={data.video_url}
               controls
+              poster={data.episode.thumbnail_url || undefined}
               style={{ width: '100%', display: 'block', maxHeight: '70vh' }}
               playsInline
+              onError={() => setVideoError(true)}
             >
               Your browser does not support the video tag.
             </video>
           </div>
         ) : (
-          <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 16, background: '#1a1a3e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-            <p style={{ color: '#64748b', fontSize: 14 }}>No video available yet</p>
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '16/9',
+              borderRadius: 16,
+              overflow: 'hidden',
+              background: data.episode.thumbnail_url
+                ? `url(${data.episode.thumbnail_url}) center/cover`
+                : 'linear-gradient(135deg, #1e1b4b, #312e81)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 12,
+                background: 'rgba(0,0,0,0.5)',
+                padding: 32,
+                borderRadius: 16,
+              }}
+            >
+              <Film size={48} style={{ color: 'rgba(100,116,139,0.6)' }} />
+              <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
+                No video available yet
+              </p>
+            </div>
+          </div>
+        )}
+        {videoError && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              justifyContent: 'center',
+              padding: 12,
+              marginBottom: 24,
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+            onClick={() => setVideoError(false)}
+          >
+            <Play size={16} style={{ color: '#fca5a5' }} />
+            <span style={{ color: '#fca5a5', fontSize: 13 }}>Video failed to load — click to retry</span>
           </div>
         )}
 
