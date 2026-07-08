@@ -4,7 +4,7 @@ import {
   resolveEpisodeIDByToken,
   getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { buildVideoUrl } from "@/services/minio_service";
+import { getPresignedVideoUrl, parseObjectKey } from "@/services/minio_service";
 
 export async function GET(request, { params }) {
   try {
@@ -17,8 +17,9 @@ export async function GET(request, { params }) {
     const { token } = await params;
     const episodeId = await resolveEpisodeIDByToken(token);
 
-    const objectKey = await getEpisodeVideoUrl(episodeId);
-    const videoUrl = buildVideoUrl(objectKey);
+    const storedValue = await getEpisodeVideoUrl(episodeId);
+    const objectKey = parseObjectKey(storedValue);
+    const videoUrl = await getPresignedVideoUrl(objectKey);
 
     return NextResponse.json({ video_url: videoUrl }, { status: 200 });
   } catch (err) {
