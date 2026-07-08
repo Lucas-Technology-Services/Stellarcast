@@ -4,11 +4,42 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  PutBucketCorsCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const CHUNK_SIZE = 5 * 1024 * 1024;
+const CHUNK_SIZE = 50 * 1024 * 1024;
 const CONCURRENCY = 5;
 const MAX_RETRIES = 3;
+
+let _corsConfigured = false;
+
+async function ensureBucketCors(): Promise<void> {
+  if (_corsConfigured) return;
+  const client = getClient();
+  try {
+    await client.send(
+      new PutBucketCorsCommand({
+        Bucket: getBucketName(),
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedOrigins: ["*"],
+              AllowedMethods: ["GET", "HEAD"],
+              AllowedHeaders: ["*"],
+              ExposeHeaders: ["Content-Length", "Content-Type", "Accept-Ranges", "Content-Range"],
+              MaxAgeSeconds: 3600,
+            },
+          ],
+        },
+      }),
+    );
+    _corsConfigured = true;
+  } catch {
+    // bucket may already have CORS or CORS not supported — non-fatal
+  }
+}
 
 let _client: S3Client | null = null;
 
@@ -76,6 +107,8 @@ export async function uploadVideo(
 
   const client = getClient();
   const bucket = getBucketName();
+
+  await ensureBucketCors();
 
   const { UploadId } = await client.send(
     new CreateMultipartUploadCommand({
@@ -150,4 +183,30 @@ export async function uploadVideo(
 export function buildVideoUrl(objectKey: string): string {
   const encodedKey = objectKey.split("/").map(encodeURIComponent).join("/");
   return `${getEndpoint()}/${getBucketName()}/${encodedKey}`;
+}
+
+export async function getPresignedVideoUrl(objectKey: string): Promise<string> {
+  const client = getClient();
+  return getSignedUrl(
+    client,
+    new GetObjectCommand({
+      Bucket: getBucketName(),
+      Key: objectKey,
+    }),
+    { expiresIn: 3600 },
+  );
+}
+
+export function parseObjectKey(storedValue: string): string {
+  if (storedValue.includes("://")) {
+    const url = new URL(storedValue);
+    const bucket = getBucketName();
+    const pathParts = url.pathname.split("/");
+    const bucketIndex = pathParts.indexOf(bucket);
+    if (bucketIndex !== -1) {
+      return pathParts.slice(bucketIndex + 1).map(decodeURIComponent).join("/");
+    }
+    return decodeURIComponent(url.pathname.replace(/^\//, ""));
+  }
+  return storedValue;
 }

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { validateToken } from "@/services/auth_service";
 import {
-  resolveEpisodeIDByToken,
   getEpisodeByToken,
   getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { buildVideoUrl } from "@/services/minio_service";
+import { getPresignedVideoUrl, parseObjectKey } from "@/services/minio_service";
 
 export async function GET(request, { params }) {
   try {
@@ -22,8 +21,11 @@ export async function GET(request, { params }) {
 
     let videoUrl = null;
     try {
-      const objectKey = await getEpisodeVideoUrl(episodeId);
-      videoUrl = buildVideoUrl(objectKey);
+      const storedValue = await getEpisodeVideoUrl(episodeId);
+      const objectKey = parseObjectKey(storedValue);
+      if (objectKey.includes("/") || objectKey.includes("://")) {
+        videoUrl = await getPresignedVideoUrl(objectKey);
+      }
     } catch {
       // no video uploaded yet
     }

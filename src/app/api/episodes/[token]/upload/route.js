@@ -6,7 +6,7 @@ import {
   setEpisodeVideoUrl,
   getPodcastTitleByEpisodeId,
 } from "@/services/podcastService";
-import { uploadVideo, buildVideoUrl } from "@/services/minio_service";
+import { uploadVideo } from "@/services/minio_service";
 import { generatePlayerToken } from "@/services/player_service";
 
 const MAX_VIDEO_SIZE = 300 * 1024 * 1024;
@@ -53,8 +53,7 @@ export async function POST(request, { params }) {
       ext,
     );
 
-    const videoUrl = buildVideoUrl(objectKey);
-    await setEpisodeVideoUrl(episodeId, videoUrl);
+    await setEpisodeVideoUrl(episodeId, objectKey);
 
     const playerToken = generatePlayerToken(objectKey);
     const baseUrl =

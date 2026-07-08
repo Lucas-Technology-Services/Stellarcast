@@ -51,7 +51,7 @@ export interface LoginResponse {
   }
 }
 
-import { apiGet, apiPost, apiUploadFile } from './api-client'
+import { apiGet, apiPost, apiPut, apiDelete, apiUploadFile } from './api-client'
 import { getUserData } from './auth'
 
 export async function fetchCategories(): Promise<PodcastCategory[]> {
@@ -175,6 +175,26 @@ export async function uploadEpisodeThumbnail(
   return apiUploadFile<Episode>(
     `/api/episodes/${encodeURIComponent(episodeToken)}/thumbnail`,
     formData,
+    token,
+  )
+}
+
+export async function updateEpisode(
+  episodeToken: string,
+  data: { title: string; description?: string; duration_seconds?: number },
+): Promise<Episode> {
+  const token = await getMachineToken()
+  return apiPut<Episode>(
+    `/api/episodes/${encodeURIComponent(episodeToken)}`,
+    data,
+    token,
+  )
+}
+
+export async function deleteEpisode(episodeToken: string): Promise<void> {
+  const token = await getMachineToken()
+  await apiDelete(
+    `/api/episodes/${encodeURIComponent(episodeToken)}`,
     token,
   )
 }

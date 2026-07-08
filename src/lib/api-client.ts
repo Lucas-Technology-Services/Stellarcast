@@ -45,6 +45,30 @@ export async function apiPost<T>(
   return handleResponse<T>(res)
 }
 
+export async function apiPut<T>(
+  endpoint: string,
+  body: unknown,
+  token?: string,
+): Promise<T> {
+  const res = await fetch(endpoint, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  return handleResponse<T>(res)
+}
+
+export async function apiDelete(
+  endpoint: string,
+  token?: string,
+): Promise<void> {
+  const res = await fetch(endpoint, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  await handleResponse<void>(res)
+}
+
 export async function apiUploadFile<T>(
   endpoint: string,
   formData: FormData,
