@@ -8,8 +8,6 @@ import {
 } from "@/services/podcastService";
 import { uploadVideo, buildVideoUrl } from "@/services/minio_service";
 import { generatePlayerToken } from "@/services/player_service";
-import { writeFile, unlink, mkdir } from "fs/promises";
-import path from "path";
 
 const MAX_VIDEO_SIZE = 300 * 1024 * 1024;
 
@@ -45,40 +43,32 @@ export async function POST(request, { params }) {
     }
 
     const ext = videoFile.name.split(".").pop() || "mp4";
-    const tmpDir = "/tmp/podcast-uploads";
-    await mkdir(tmpDir, { recursive: true });
-    const filePath = path.join(tmpDir, `${episodeId}.${ext}`);
 
     const buffer = Buffer.from(await videoFile.arrayBuffer());
-    await writeFile(filePath, buffer);
 
-    try {
-      const objectKey = await uploadVideo(
-        filePath,
-        podcastTitle,
-        episodeId,
-        ext,
-      );
+    const objectKey = await uploadVideo(
+      buffer,
+      podcastTitle,
+      episodeId,
+      ext,
+    );
 
-      const videoUrl = buildVideoUrl(objectKey);
-      await setEpisodeVideoUrl(episodeId, videoUrl);
+    const videoUrl = buildVideoUrl(objectKey);
+    await setEpisodeVideoUrl(episodeId, videoUrl);
 
-      const playerToken = generatePlayerToken(objectKey);
-      const baseUrl =
-        process.env.PLATFORM_BASE_URL || "https://stellarcast.onrender.com";
-      const playerUrl = `${baseUrl}/player/${playerToken}`;
+    const playerToken = generatePlayerToken(objectKey);
+    const baseUrl =
+      process.env.PLATFORM_BASE_URL || "https://stellarcast.onrender.com";
+    const playerUrl = `${baseUrl}/player/${playerToken}`;
 
-      return NextResponse.json(
-        {
-          message: "Upload accepted",
-          status: "published",
-          player_url: playerUrl,
-        },
-        { status: 202 },
-      );
-    } finally {
-      await unlink(filePath).catch(() => {});
-    }
+    return NextResponse.json(
+      {
+        message: "Upload accepted",
+        status: "published",
+        player_url: playerUrl,
+      },
+      { status: 202 },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
 
