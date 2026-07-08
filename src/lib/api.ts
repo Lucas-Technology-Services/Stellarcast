@@ -178,3 +178,15 @@ export async function uploadEpisodeThumbnail(
     token,
   )
 }
+
+export async function createFeed(
+  podcastId: string,
+  episodeId: string,
+): Promise<{ id: string }> {
+  const token = await getMachineToken()
+  return apiPost<{ id: string }>(
+    '/api/feeds',
+    { podcast_id: podcastId, episode_id: episodeId },
+    token,
+  )
+}

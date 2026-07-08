@@ -57,20 +57,43 @@ export default function VideoUpload() {
     load()
   }, [episodeToken])
 
+  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
+
+  function isValidSize(file: File): boolean {
+    return file.size <= MAX_VIDEO_SIZE
+  }
+
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault()
     setDragOver(false)
     const file = e.dataTransfer.files?.[0]
-    if (file) setVideoFile(file)
+    if (file) {
+      if (!isValidSize(file)) {
+        setError('Video file exceeds the 300 MB limit')
+        return
+      }
+      setVideoFile(file)
+    }
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) setVideoFile(file)
+    if (file) {
+      if (!isValidSize(file)) {
+        setError('Video file exceeds the 300 MB limit')
+        setVideoFile(null)
+        return
+      }
+      setVideoFile(file)
+    }
   }
 
   async function handleUpload() {
     if (!token || !episodeToken || !videoFile) return
+    if (!isValidSize(videoFile)) {
+      setError('Video file exceeds the 300 MB limit')
+      return
+    }
     setError('')
     setSuccess('')
     setUploading(true)
@@ -197,7 +220,7 @@ export default function VideoUpload() {
             ) : (
               <>
                 <Upload size={18} />
-                Upload to YouTube
+                Upload Video
               </>
             )}
           </Button>
