@@ -196,7 +196,7 @@ export class EpisodesConsumptionInsightsService {
         health: "excellent",
 
         message:
-          "Excelente desempenho. Seus episódios apresentam uma retenção muito acima da média, indicando que seu conteúdo mantém os ouvintes engajados até o final.",
+          "Excellent performance. Your episodes have retention well above average, showing your content keeps viewers engaged until the end.",
 
       };
 
@@ -211,7 +211,7 @@ export class EpisodesConsumptionInsightsService {
         health: "good",
 
         message:
-          "Seu conteúdo apresenta uma boa retenção. Existem oportunidades para aumentar ainda mais o consumo completo dos episódios.",
+          "Your content has good retention. There are opportunities to further increase full episode consumption.",
 
       };
 
@@ -226,7 +226,7 @@ export class EpisodesConsumptionInsightsService {
         health: "regular",
 
         message:
-          "Os episódios possuem uma retenção moderada. Vale analisar os episódios com menor desempenho para identificar oportunidades de melhoria.",
+          "Episodes have moderate retention. Review the lowest-performing episodes to identify improvement opportunities.",
 
       };
 
@@ -238,8 +238,8 @@ export class EpisodesConsumptionInsightsService {
 
       health: "poor",
 
-      message:
-        "A retenção dos episódios está abaixo do esperado. Recomenda-se revisar formato, estrutura e frequência de publicação.",
+message:
+          "Episode retention is below expectations. Review format, structure, and publishing frequency.",
 
     };
 
@@ -317,10 +317,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "positive",
 
-        title: "Excelente retenção",
+        title: "Excellent retention",
 
         description:
-          "A média de conclusão dos episódios está acima de 80%, indicando que o conteúdo consegue manter a atenção da audiência durante praticamente toda a reprodução.",
+          "Average episode completion is above 80%, indicating content keeps the audience engaged through most of the playback.",
 
       });
 
@@ -330,10 +330,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "positive",
 
-        title: "Boa retenção",
+        title: "Good retention",
 
         description:
-          "A maioria dos episódios apresenta uma boa taxa de conclusão. Pequenos ajustes podem aumentar ainda mais o consumo completo.",
+          "Most episodes have a good completion rate. Small tweaks could increase full consumption even further.",
 
       });
 
@@ -343,10 +343,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "warning",
 
-        title: "Retenção abaixo do esperado",
+        title: "Retention below expectations",
 
         description:
-          "Grande parte dos ouvintes interrompe os episódios antes da conclusão. Vale revisar o formato e comparar os episódios com melhor desempenho.",
+          "Most viewers stop episodes before completion. Review the format and compare with better-performing episodes.",
 
       });
 
@@ -358,10 +358,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "positive",
 
-        title: "Melhor episódio",
+        title: "Best episode",
 
         description:
-          `"${context.bestEpisode.episode_title}" apresenta ${context.bestEpisode.completion_rate.toFixed(1)}% de conclusão. Ele pode servir como referência para novos conteúdos.`,
+          `"${context.bestEpisode.episode_title}" has ${(context.bestEpisode.completion_rate ?? 0).toFixed(1)}% completion. It can serve as a reference for new content.`,
 
       });
 
@@ -378,10 +378,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "opportunity",
 
-        title: "Oportunidade de melhoria",
+        title: "Improvement opportunity",
 
         description:
-          `"${context.worstEpisode.episode_title}" possui desempenho significativamente inferior aos demais. Comparar sua estrutura com os episódios de maior retenção pode revelar boas oportunidades.`,
+          `"${context.worstEpisode.episode_title}" performs significantly worse than others. Comparing its structure to higher-retention episodes may uncover good opportunities.`,
 
       });
 
@@ -393,10 +393,10 @@ export class EpisodesConsumptionInsightsService {
 
         type: "opportunity",
 
-        title: "Poucos episódios publicados",
+        title: "Few published episodes",
 
         description:
-          "Ainda existe pouco histórico para análises mais profundas. Conforme novos episódios forem publicados, a plataforma fornecerá insights mais precisos.",
+          "Not enough history for deeper analysis. As new episodes are published, the platform will provide more accurate insights.",
 
       });
 
@@ -418,10 +418,10 @@ export class EpisodesConsumptionInsightsService {
 
         priority: "high",
 
-        title: "Melhorar retenção",
+        title: "Improve retention",
 
         description:
-          "Analise principalmente a introdução dos episódios com menor conclusão. Os primeiros minutos costumam ser decisivos para manter a audiência.",
+          "Review the introduction of episodes with the lowest completion. The first few minutes are often decisive for keeping the audience.",
 
       });
 
@@ -433,10 +433,10 @@ export class EpisodesConsumptionInsightsService {
 
         priority: "medium",
 
-        title: "Expandir o catálogo",
+        title: "Expand catalog",
 
         description:
-          "Quanto maior a quantidade de episódios publicados, maior será a capacidade da plataforma identificar padrões de consumo e gerar recomendações mais inteligentes.",
+          "The more episodes published, the better the platform can identify consumption patterns and generate smarter recommendations.",
 
       });
 
@@ -448,10 +448,10 @@ export class EpisodesConsumptionInsightsService {
 
         priority: "medium",
 
-        title: "Replicar conteúdos de sucesso",
+        title: "Replicate successful content",
 
         description:
-          `Utilize "${context.bestEpisode.episode_title}" como referência para futuros episódios, observando tema, formato e duração.`,
+          `Use "${context.bestEpisode.episode_title}" as a reference for future episodes, considering topic, format, and duration.`,
 
       });
 
@@ -463,10 +463,10 @@ export class EpisodesConsumptionInsightsService {
 
         priority: "low",
 
-        title: "Manter consistência",
+        title: "Maintain consistency",
 
         description:
-          "Os indicadores mostram que seu conteúdo está performando muito bem. Continue mantendo a frequência de publicação e monitore a evolução dos próximos episódios.",
+          "Your metrics show content is performing very well. Keep up the publishing frequency and monitor evolution of future episodes.",
 
       });
 
@@ -475,11 +475,11 @@ export class EpisodesConsumptionInsightsService {
     return recommendations;
 
   }
-    /**
-   * Constrói um contexto analítico simples.
-   * Não utiliza LLM.
-   * Apenas organiza informações que serão reutilizadas
-   * pelo motor de insights.
+/**
+   * Builds a simple analytical context.
+   * Does not use LLM.
+   * Only organizes information to be reused
+   * by the insights engine.
    */
   private buildConsumptionContext(
     context: ProducerConsumptionContext,
@@ -512,7 +512,7 @@ export class EpisodesConsumptionInsightsService {
   }
 
   /**
-   * Gera uma narrativa executiva.
+   * Builds an executive narrative.
    */
   private buildExecutiveNarrative(
     context: ProducerConsumptionContext,
@@ -523,28 +523,28 @@ export class EpisodesConsumptionInsightsService {
 
     if (score >= 90) {
 
-      return "Seu catálogo demonstra um excelente nível de engajamento. Os episódios mantêm a audiência até o final e apresentam indicadores consistentes de consumo.";
+      return "Your catalog shows excellent engagement levels. Episodes keep the audience watching until the end with consistent consumption metrics.";
 
     }
 
     if (score >= 75) {
 
-      return "Seu conteúdo apresenta um bom desempenho geral. Alguns episódios já se destacam pela retenção e podem servir de referência para novas publicações.";
+      return "Your content shows good overall performance. Some episodes already stand out for retention and can serve as references for new publications.";
 
     }
 
     if (score >= 50) {
 
-      return "O desempenho é consistente, mas ainda existem oportunidades para aumentar a retenção dos ouvintes durante os episódios.";
+      return "Performance is consistent, but there are still opportunities to increase viewer retention during episodes.";
 
     }
 
-    return "Os indicadores mostram uma oportunidade clara de evolução. Vale acompanhar os episódios com menor retenção e utilizar os melhores desempenhos como referência.";
+    return "Metrics show a clear opportunity for improvement. Track episodes with lower retention and use the best performers as a reference.";
 
   }
 
-  /**
-   * Método público final.
+/**
+   * Final public method.
    */
   public async execute(
     producerEmail: string,
@@ -584,9 +584,9 @@ export class EpisodesConsumptionInsightsService {
           context.uniqueViewers,
 
         averageCompletionRate:
-          Number(
-            context.averageCompletionRate.toFixed(2),
-          ),
+          context.averageCompletionRate
+            ? Number(context.averageCompletionRate.toFixed(2))
+            : 0,
 
       },
 
