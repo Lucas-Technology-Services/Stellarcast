@@ -179,6 +179,132 @@ function buildSpec() {
             status: { type: "string", enum: ["AUTHORIZED"] },
           },
         },
+        WatchProgress: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            episode_id: { type: "string", format: "uuid" },
+            user_id: { type: "string", format: "uuid", nullable: true },
+            ip_hash: { type: "string" },
+            progress_pct: { type: "integer", minimum: 0, maximum: 100 },
+            recorded_at: { type: "string", format: "date-time" },
+          },
+        },
+        WatchProgressWithEpisode: {
+          allOf: [
+            { $ref: "#/components/schemas/WatchProgress" },
+            {
+              type: "object",
+              properties: {
+                episode_title: { type: "string" },
+                podcast_title: { type: "string" },
+                podcast_id: { type: "string", format: "uuid" },
+              },
+            },
+          ],
+        },
+        ViewerCompletionRate: {
+          type: "object",
+          properties: {
+            user_id: { type: "string", format: "uuid" },
+            email: { type: "string", format: "email" },
+            total_episodes_watched: { type: "integer" },
+            completed_episodes: { type: "integer" },
+            completion_rate: { type: "number" },
+          },
+        },
+        ViewerFrequentCompletion: {
+          type: "object",
+          properties: {
+            user_id: { type: "string", format: "uuid" },
+            email: { type: "string", format: "email" },
+            completed_episode_count: { type: "integer" },
+            last_completed_at: { type: "string", format: "date-time" },
+          },
+        },
+        RecentlyCompletedEpisode: {
+          type: "object",
+          properties: {
+            episode_id: { type: "string", format: "uuid" },
+            episode_title: { type: "string" },
+            episode_token: { type: "string" },
+            podcast_id: { type: "string", format: "uuid" },
+            podcast_title: { type: "string" },
+            completed_at: { type: "string", format: "date-time" },
+            completions_count: { type: "integer" },
+          },
+        },
+        EpisodeCompletionFrequency: {
+          type: "object",
+          properties: {
+            episode_id: { type: "string", format: "uuid" },
+            episode_title: { type: "string" },
+            episode_token: { type: "string" },
+            podcast_title: { type: "string" },
+            total_viewers_completed: { type: "integer" },
+            unique_viewers_completed: { type: "integer" },
+          },
+        },
+        ProducerMetrics: {
+          type: "object",
+          properties: {
+            podcast_id: { type: "string", format: "uuid" },
+            podcast_title: { type: "string" },
+            total_episodes: { type: "integer" },
+            total_completions: { type: "integer" },
+            unique_viewers: { type: "integer" },
+            avg_completion_rate: { type: "number" },
+            last_7d_completions: { type: "integer" },
+            last_30d_completions: { type: "integer" },
+          },
+        },
+        ProducerEpisodeMetrics: {
+          type: "object",
+          properties: {
+            episode_id: { type: "string", format: "uuid" },
+            episode_title: { type: "string" },
+            episode_token: { type: "string" },
+            published_at: { type: "string", format: "date-time", nullable: true },
+            duration_seconds: { type: "number", nullable: true },
+            total_watch_attempts: { type: "integer" },
+            completions: { type: "integer" },
+            completion_rate: { type: "number" },
+            unique_viewers_completed: { type: "integer" },
+          },
+        },
+        ConsumptionSummary: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            health: { type: "string", enum: ["excellent", "good", "regular", "poor"] },
+            message: { type: "string" },
+          },
+        },
+        ConsumptionInsight: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["positive", "warning", "opportunity"] },
+            title: { type: "string" },
+            description: { type: "string" },
+          },
+        },
+        ConsumptionRecommendation: {
+          type: "object",
+          properties: {
+            priority: { type: "string", enum: ["high", "medium", "low"] },
+            title: { type: "string" },
+            description: { type: "string" },
+          },
+        },
+        EpisodeRanking: {
+          type: "object",
+          properties: {
+            episodeId: { type: "string", format: "uuid" },
+            title: { type: "string" },
+            completionRate: { type: "number" },
+            completions: { type: "integer" },
+          },
+        },
       },
     },
     paths: {
@@ -1742,6 +1868,206 @@ function buildSpec() {
           },
         },
       },
+      "/episodes/watching/metrics/progress": {
+        post: {
+          tags: ["Watching Progress"],
+          summary: "Upsert watch progress",
+          description:
+            "Records or updates the viewing progress for an episode. If user_id is provided and the user is identified, the row is upserted via ON CONFLICT. Anonymous rows (no user_id) are always inserted.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["episode_token", "ip_hash", "progress_pct"],
+                  properties: {
+                    episode_token: { type: "string", description: "Masked video token of the episode" },
+                    user_id: { type: "string", format: "uuid", description: "User UUID (optional, for logged-in viewers)" },
+                    ip_hash: { type: "string", description: "SHA-256 hash of the viewer's IP" },
+                    progress_pct: { type: "integer", minimum: 0, maximum: 100, description: "Progress percentage (0–100)" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "201": {
+              description: "Watch progress recorded",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/WatchProgress" },
+                },
+              },
+            },
+            "400": {
+              description: "Missing or invalid fields",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Episode not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+        get: {
+          tags: ["Watching Progress"],
+          summary: "Query watch progress metrics",
+          description:
+            "Retrieves various watch progress metrics based on the `action` query parameter. All actions require a machine token.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+            {
+              in: "query",
+              name: "action",
+              required: true,
+              schema: { type: "string" },
+              description: "Metric action to execute. See description below.",
+            },
+            {
+              in: "query",
+              name: "episode_token",
+              required: false,
+              schema: { type: "string" },
+              description: "Masked video token (required for: episode-progress, latest-by-episode)",
+            },
+            {
+              in: "query",
+              name: "ip_hash",
+              required: false,
+              schema: { type: "string" },
+              description: "IP hash (required for: latest-by-ip, latest-by-episode, completed-by-ip, count-completed-by-ip)",
+            },
+            {
+              in: "query",
+              name: "user_id",
+              required: false,
+              schema: { type: "string", format: "uuid" },
+              description: "User UUID (required for: latest-by-user, completed-by-user, count-completed-by-user)",
+            },
+            {
+              in: "query",
+              name: "email",
+              required: false,
+              schema: { type: "string", format: "email" },
+              description: "Producer email (required for: producer-metrics, producer-episode-metrics)",
+            },
+            {
+              in: "query",
+              name: "min_episodes",
+              required: false,
+              schema: { type: "integer", default: 3 },
+              description: "Minimum episodes watched filter (action: viewer-completion-rates)",
+            },
+            {
+              in: "query",
+              name: "min_completions",
+              required: false,
+              schema: { type: "integer", default: 5 },
+              description: "Minimum completions filter (action: viewer-frequent-completions)",
+            },
+            {
+              in: "query",
+              name: "limit_days",
+              required: false,
+              schema: { type: "integer", default: 30 },
+              description: "Lookback window in days (action: recently-completed)",
+            },
+            {
+              in: "query",
+              name: "min_viewers",
+              required: false,
+              schema: { type: "integer", default: 1 },
+              description: "Minimum unique viewers filter (action: episode-completion-frequency)",
+            },
+            {
+              in: "query",
+              name: "limit",
+              required: false,
+              schema: { type: "integer", default: 20 },
+              description: "Max results (action: latest-by-ip, latest-by-user)",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Query results",
+              content: {
+                "application/json": {
+                  schema: {
+                    oneOf: [
+                      { type: "array", items: { $ref: "#/components/schemas/WatchProgress" } },
+                      { type: "array", items: { $ref: "#/components/schemas/WatchProgressWithEpisode" } },
+                      { type: "array", items: { $ref: "#/components/schemas/ViewerCompletionRate" } },
+                      { type: "array", items: { $ref: "#/components/schemas/ViewerFrequentCompletion" } },
+                      { type: "array", items: { $ref: "#/components/schemas/RecentlyCompletedEpisode" } },
+                      { type: "array", items: { $ref: "#/components/schemas/EpisodeCompletionFrequency" } },
+                      { type: "array", items: { $ref: "#/components/schemas/ProducerMetrics" } },
+                      { type: "array", items: { $ref: "#/components/schemas/ProducerEpisodeMetrics" } },
+                    ],
+                  },
+                },
+              },
+            },
+            "400": {
+              description: "Missing or invalid query parameters",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Resource not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
       "/player/{token}": {
         get: {
           tags: ["Player"],
@@ -1802,6 +2128,102 @@ function buildSpec() {
             },
             "404": {
               description: "Episode not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/episodes/consumption-insights": {
+        get: {
+          tags: ["Watching Progress"],
+          summary: "Get consumption insights for a producer",
+          description:
+            "Returns a complete analysis of a producer's episode consumption performance, including summary, statistics, episode ranking, insights, recommendations, executive narrative, and analytics context.",
+          security: [{ machineToken: [] }],
+          parameters: [
+            {
+              in: "header",
+              name: "Authorization",
+              required: true,
+              schema: { type: "string" },
+              description: "Machine Bearer token from POST /auth/token",
+            },
+            {
+              in: "query",
+              name: "email",
+              required: true,
+              schema: { type: "string", format: "email" },
+              description: "Producer email to fetch insights for",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Producer consumption insights",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      generatedAt: { type: "string", format: "date-time" },
+                      summary: { $ref: "#/components/schemas/ConsumptionSummary" },
+                      statistics: {
+                        type: "object",
+                        properties: {
+                          podcasts: { type: "integer" },
+                          episodes: { type: "integer" },
+                          completions: { type: "integer" },
+                          uniqueViewers: { type: "integer" },
+                          averageCompletionRate: { type: "number" },
+                        },
+                      },
+                      ranking: {
+                        type: "object",
+                        properties: {
+                          bestEpisodes: { type: "array", items: { $ref: "#/components/schemas/EpisodeRanking" } },
+                          worstEpisodes: { type: "array", items: { $ref: "#/components/schemas/EpisodeRanking" } },
+                        },
+                      },
+                      insights: { type: "array", items: { $ref: "#/components/schemas/ConsumptionInsight" } },
+                      recommendations: { type: "array", items: { $ref: "#/components/schemas/ConsumptionRecommendation" } },
+                      executiveNarrative: { type: "string" },
+                      analyticsContext: {
+                        type: "object",
+                        properties: {
+                          hasManyEpisodes: { type: "boolean" },
+                          hasExcellentRetention: { type: "boolean" },
+                          hasLowRetention: { type: "boolean" },
+                          growingAudience: { type: "boolean" },
+                          bestEpisode: { $ref: "#/components/schemas/ProducerEpisodeMetrics" },
+                          worstEpisode: { $ref: "#/components/schemas/ProducerEpisodeMetrics" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "400": {
+              description: "Missing email parameter",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Error" },
+                },
+              },
+            },
+            "404": {
+              description: "Producer not found",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/Error" },
