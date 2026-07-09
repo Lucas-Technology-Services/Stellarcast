@@ -199,6 +199,45 @@ export async function deleteEpisode(episodeToken: string): Promise<void> {
   )
 }
 
+export interface ConsumptionInsights {
+  generatedAt: string
+  summary: {
+    score: number
+    health: 'excellent' | 'good' | 'regular' | 'poor'
+    message: string
+  }
+  statistics: {
+    podcasts: number
+    episodes: number
+    completions: number
+    uniqueViewers: number
+    averageCompletionRate: number
+  }
+  ranking: {
+    bestEpisodes: { episodeId: string; title: string; completionRate: number; completions: number }[]
+    worstEpisodes: { episodeId: string; title: string; completionRate: number; completions: number }[]
+  }
+  insights: { type: 'positive' | 'warning' | 'opportunity'; title: string; description: string }[]
+  recommendations: { priority: 'high' | 'medium' | 'low'; title: string; description: string }[]
+  executiveNarrative: string
+  analyticsContext: {
+    hasManyEpisodes: boolean
+    hasExcellentRetention: boolean
+    hasLowRetention: boolean
+    growingAudience: boolean
+    bestEpisode?: unknown
+    worstEpisode?: unknown
+  }
+}
+
+export async function fetchConsumptionInsights(email: string): Promise<ConsumptionInsights> {
+  const token = await getMachineToken()
+  return apiGet<ConsumptionInsights>(
+    `/api/episodes/consumption-insights?email=${encodeURIComponent(email)}`,
+    token,
+  )
+}
+
 export async function createFeed(
   podcastId: string,
   episodeId: string,

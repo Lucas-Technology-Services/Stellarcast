@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Mic, Plus } from 'lucide-react'
+import { Mic, Plus, BarChart3 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
 import { listMyPodcasts, type Podcast } from '@/lib/api'
@@ -80,6 +80,13 @@ const PageSubtitle = styled.p`
   margin-bottom: 32px;
 `
 
+const ButtonsRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+`
+
 const CreateButton = styled(Link)`
   display: inline-flex;
   align-items: center;
@@ -91,9 +98,27 @@ const CreateButton = styled(Link)`
   font-weight: 600;
   font-size: 14px;
   text-decoration: none;
-  margin-bottom: 32px;
   transition: opacity 0.2s;
   &:hover { opacity: 0.92; }
+`
+
+const InsightsButton = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  color: #c4b5fd;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+  &:hover {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: rgba(124, 58, 237, 0.5);
+  }
 `
 
 const Grid = styled.div`
@@ -217,10 +242,16 @@ export default function PodcastList() {
         <PageTitle>My Podcasts</PageTitle>
         <PageSubtitle>Manage your podcasts and episodes</PageSubtitle>
 
-        <CreateButton href="/podcasts">
-          <Plus size={18} />
-          New Podcast
-        </CreateButton>
+        <ButtonsRow>
+          <CreateButton href="/podcasts">
+            <Plus size={18} />
+            New Podcast
+          </CreateButton>
+          <InsightsButton href="/podcasts/insights">
+            <BarChart3 size={18} />
+            Insights
+          </InsightsButton>
+        </ButtonsRow>
 
         {loading ? (
           <p style={{ color: '#94a3b8' }}>Loading podcasts...</p>
