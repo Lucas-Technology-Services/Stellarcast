@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.comments (
     id          UUID        NOT NULL DEFAULT gen_random_uuid(),
     user_id     UUID        NOT NULL,
-    episode_id  UUID        NOT NULL,
+    podcast_id  UUID        NOT NULL,
     parent_id   UUID,
     content     TEXT        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS public.comments (
         REFERENCES public.users (id)
         ON UPDATE NO ACTION
         ON DELETE CASCADE,
-    CONSTRAINT fk_comments_episodes FOREIGN KEY (episode_id)
-        REFERENCES public.episodes (id)
+    CONSTRAINT fk_comments_podcasts FOREIGN KEY (podcast_id)
+        REFERENCES public.podcasts (id)
         ON UPDATE NO ACTION
         ON DELETE CASCADE,
     CONSTRAINT fk_comments_parent   FOREIGN KEY (parent_id)
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS public.comments (
         ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_comments_episode_id
-    ON public.comments (episode_id)
+CREATE INDEX IF NOT EXISTS idx_comments_podcast_id
+    ON public.comments (podcast_id)
     WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_comments_user_id
