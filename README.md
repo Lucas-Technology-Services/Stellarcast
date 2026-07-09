@@ -119,8 +119,8 @@ Generates a machine-to-machine JWT token using client credentials.
 curl -X POST http://localhost:3000/api/auth/token \
   -H "Content-Type: application/json" \
   -d '{
-    "client_id": "lts_a7f_5202l",
-    "secret": "k9Hp4!2vN6rT1"
+    "client_id": "xxxxxxxxx",
+    "secret": "yyyyyyyyyyyyyy"
   }'
 ```
 
@@ -128,7 +128,7 @@ curl -X POST http://localhost:3000/api/auth/token \
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
-  "client_id": "lts_a7f_5202l"
+  "client_id": "xxxxxxxxx"
 }
 ```
 
@@ -139,111 +139,12 @@ npm install
 npm run dev
 ```
 
----
-
-## Português
-
-### Visão Geral
-
-StellarCast é uma aplicação web para criar e gerenciar podcasts e seus episódios. Usuários podem criar podcasts, enviar imagens de capa, gerenciar episódios e fazer upload de vídeos para plataformas de streaming.
-
-### Arquitetura
-
-```
-Componente (React)
-    ↓  chama funções do @/lib/api
-@/lib/api.ts (fetch client-side)
-    ↓  requisições HTTP para rotas Next.js
-Rotas Next.js API (src/app/api/)
-    ↓  delega para camada de serviço
-@/services/* (server-side)
-    ↓  requisições HTTP para API externa
-API Externa (PODCAST_BSE_URL / API_URL)
-```
-
-### Funcionalidades Implementadas
-
-| Funcionalidade | Componente Frontend | Rota Next.js API | Serviço |
-|---|---|---|---|
-| **Listar categorias** | `CreatePodcast.tsx` → `fetchCategories()` | `GET /api/categories` | `externalApi.ts` |
-| **Registrar usuário** | Formulários de auth → `registerUser()` | `POST /api/auth/register` | — |
-| **Login de usuário** | Formulários de auth → `loginUser()` | `POST /api/auth/login` | — |
-| **Renovar token** | — | `POST /api/auth/token` | — |
-| **Criar podcast** | `CreatePodcast.tsx` → `createPodcast()` | `POST /api/podcasts` | `podcastService.ts` |
-| **Upload de capa** | `CreatePodcast.tsx` → `uploadPodcastCover()` | `POST /api/podcasts/[title]/cover` | `podcastService.ts` |
-| **Listar meus podcasts** | `PodcastList.tsx` → `listMyPodcasts()` | `GET /api/podcasts/mine` | `podcastService.ts` |
-| **Buscar podcast por título** | `EpisodeList.tsx` → `getPodcastByTitle()` | `GET /api/podcasts/[title]` | `podcastService.ts` |
-| **Listar episódios** | `EpisodeList.tsx` → `listEpisodes()` | `GET /api/podcasts/[title]/episodes` | `podcastService.ts` |
-| **Criar episódio** | `CreateEpisode.tsx` → `createEpisode()` | `POST /api/podcasts/[title]/episodes` | `podcastService.ts` |
-| **Buscar episódio** | `VideoUpload.tsx` → `getEpisode()` | `GET /api/episodes/[token]` | `externalApi.ts` |
-| **Upload de vídeo** | `VideoUpload.tsx` → `uploadEpisodeVideo()` | `POST /api/episodes/[token]/upload` | `api.ts` |
-| **Upload de thumbnail** | `CreateEpisode.tsx` → `uploadEpisodeThumbnail()` | `POST /api/episodes/[token]/thumbnail` | `api.ts` |
-
-### Estrutura do Projeto
-
-```
-src/
-├── app/
-│   ├── (pages)/
-│   │   └── podcasts/
-│   │       ├── page.tsx                    # /podcasts — Criar Podcast
-│   │       ├── mine/
-│   │       │   └── page.tsx                # /podcasts/mine — Meus Podcasts
-│   │       └── [title]/
-│   │           └── episodes/
-│   │               ├── page.tsx            # Lista de episódios
-│   │               ├── create/page.tsx     # Criar episódio
-│   │               └── [token]/upload/page.tsx  # Upload de vídeo
-│   └── api/
-│       ├── auth/ (login, register, token)
-│       ├── categories/route.ts
-│       ├── podcasts/
-│       │   ├── route.ts
-│       │   ├── mine/route.ts
-│       │   └── [title]/
-│       │       ├── route.ts
-│       │       ├── cover/route.ts
-│       │       └── episodes/route.ts
-│       └── episodes/
-│           └── [token]/
-│               ├── route.ts
-│               ├── upload/route.ts
-│               └── thumbnail/route.ts
-├── components/
-│   ├── podcasts/
-│   │   ├── CreatePodcast.tsx
-│   │   ├── PodcastList.tsx
-│   │   └── styles.ts
-│   └── episodes/
-│       ├── CreateEpisode.tsx
-│       ├── EpisodeList.tsx
-│       ├── VideoUpload.tsx
-│       └── styles.ts
-├── lib/
-│   ├── api.ts             # Funções cliente da API
-│   ├── api-client.ts      # Helpers genéricos de fetch
-│   └── auth-context.ts    # Provider de contexto de auth
-└── services/
-    ├── api.ts             # Cliente server-side (usa API_URL)
-    ├── externalApi.ts     # Cliente server-side (usa PODCAST_BSE_URL)
-    ├── podcastService.ts  # Funções de serviço de podcast
-    ├── userService.ts     # Funções de serviço de usuário
-    ├── loginUser.ts       # Helper de login
-    └── resetPassword.ts   # Reset de senha
-```
-
-### Variáveis de Ambiente
-
-| Variável | Descrição |
-|---|---|
-| `PODCAST_BSE_URL` | URL base da API externa de podcasts |
-| `API_URL` | URL base alternativa da API externa |
-| `CLIENT_ID_1` | Client ID para autenticação máquina-a-máquina |
-| `SECRET_1` | Client secret para autenticação máquina-a-máquina |
-
-### Como Executar
+### Running Unit Tests
 
 ```bash
-npm install
-npm run dev
+npx vitest run --config vitest.config.ts
 ```
+
+---
+
+
