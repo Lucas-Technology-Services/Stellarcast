@@ -57,7 +57,7 @@ export async function POST(request, { params }) {
 
     const playerToken = generatePlayerToken(objectKey);
     const baseUrl =
-      process.env.PLATFORM_BASE_URL || "https://stellarcast.onrender.com";
+      process.env.PLATFORM_BASE_URL || "https://stellarcast-umber.vercel.app";
     const playerUrl = `${baseUrl}/player/${playerToken}`;
 
     return NextResponse.json(

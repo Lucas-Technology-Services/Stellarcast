@@ -194,7 +194,7 @@ export function buildRssFeed(
   episodes: EpisodeFeedData[],
 ): string {
   const baseUrl =
-    process.env.PLATFORM_BASE_URL || 'https://stellarcast.onrender.com'
+    process.env.PLATFORM_BASE_URL || 'https://stellarcast-umber.vercel.app'
   const buildDate = new Date().toUTCString()
 
   const episodeItems = episodes
