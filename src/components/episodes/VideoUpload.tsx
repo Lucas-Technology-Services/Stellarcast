@@ -57,7 +57,7 @@ export default function VideoUpload() {
     load()
   }, [episodeToken])
 
-  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
+  const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024
 
   function isValidSize(file: File): boolean {
     return file.size <= MAX_VIDEO_SIZE

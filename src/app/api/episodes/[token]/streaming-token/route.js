@@ -4,7 +4,7 @@ import {
   resolveEpisodeIDByToken,
   getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { getPresignedVideoUrl, parseObjectKey } from "@/services/minio_service";
+import { getPresignedPlaybackUrl, parseObjectKey } from "@/services/localstack_service";
 
 export async function GET(request, { params }) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
     const storedValue = await getEpisodeVideoUrl(episodeId);
     const objectKey = parseObjectKey(storedValue);
-    const videoUrl = await getPresignedVideoUrl(objectKey);
+    const videoUrl = await getPresignedPlaybackUrl(objectKey);
 
     return NextResponse.json({ video_url: videoUrl }, { status: 200 });
   } catch (err) {

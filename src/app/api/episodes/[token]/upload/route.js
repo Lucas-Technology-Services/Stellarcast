@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { validateToken } from "@/services/auth_service";
 import {
   resolveEpisodeIDByToken,
-  getEpisodeByID,
-  setEpisodeVideoUrl,
   getPodcastTitleByEpisodeId,
 } from "@/services/podcastService";
-import { uploadVideo } from "@/services/minio_service";
-import { generatePlayerToken } from "@/services/player_service";
-
-const MAX_VIDEO_SIZE = 300 * 1024 * 1024;
+import {
+  initiateMultipartUpload,
+  getPresignedPartUploadUrl,
+  abortMultipartUpload,
+  ensureBucketCors,
+} from "@/services/localstack_service";
 
 export async function POST(request, { params }) {
   try {
@@ -22,52 +22,40 @@ export async function POST(request, { params }) {
     const { token } = await params;
     const episodeId = await resolveEpisodeIDByToken(token);
 
-    const episode = await getEpisodeByID(episodeId);
     const podcastTitle = await getPodcastTitleByEpisodeId(episodeId);
 
-    const formData = await request.formData();
-    const videoFile = formData.get("video");
+    const { fileName, contentType, partCount } = await request.json();
 
-    if (!videoFile || typeof videoFile === "string") {
+    if (!fileName || !contentType || !partCount) {
       return NextResponse.json(
-        { error: "video file is required" },
+        { error: "fileName, contentType and partCount are required" },
         { status: 400 },
       );
     }
 
-    if (videoFile.size > MAX_VIDEO_SIZE) {
-      return NextResponse.json(
-        { error: "video file exceeds the 300 MB limit" },
-        { status: 413 },
+    const sanitizedTitle = podcastTitle.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const ext = fileName.split(".").pop() || "mp4";
+    const key = `${sanitizedTitle}/${episodeId}.${ext}`;
+
+    await ensureBucketCors();
+
+    const uploadId = await initiateMultipartUpload(key, contentType);
+
+    try {
+      const presignedUrls = await Promise.all(
+        Array.from({ length: partCount }, (_, i) =>
+          getPresignedPartUploadUrl(key, uploadId, i + 1),
+        ),
       );
+
+      return NextResponse.json(
+        { uploadId, key, presignedUrls, partCount },
+        { status: 200 },
+      );
+    } catch {
+      await abortMultipartUpload(key, uploadId);
+      throw new Error("Failed to generate presigned URLs");
     }
-
-    const ext = videoFile.name.split(".").pop() || "mp4";
-
-    const buffer = Buffer.from(await videoFile.arrayBuffer());
-
-    const objectKey = await uploadVideo(
-      buffer,
-      podcastTitle,
-      episodeId,
-      ext,
-    );
-
-    await setEpisodeVideoUrl(episodeId, objectKey);
-
-    const playerToken = generatePlayerToken(objectKey);
-    const baseUrl =
-      process.env.PLATFORM_BASE_URL || "https://stellarcast-umber.vercel.app";
-    const playerUrl = `${baseUrl}/player/${playerToken}`;
-
-    return NextResponse.json(
-      {
-        message: "Upload accepted",
-        status: "published",
-        player_url: playerUrl,
-      },
-      { status: 202 },
-    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
 

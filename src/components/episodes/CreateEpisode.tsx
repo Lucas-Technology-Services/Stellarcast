@@ -37,7 +37,7 @@ export default function CreateEpisode() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const MAX_VIDEO_SIZE = 300 * 1024 * 1024
+  const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024
 
   useEffect(() => {
     if (!isLoading && !token) {
@@ -70,9 +70,9 @@ export default function CreateEpisode() {
 
       if (videoFile) {
         await uploadEpisodeVideo(episode.masked_video_token, videoFile)
+      } else {
+        await createFeed(episode.podcast_id, episode.id).catch(() => {})
       }
-
-      await createFeed(episode.podcast_id, episode.id).catch(() => {})
 
       router.push(`/podcasts/${encodeURIComponent(title)}/episodes`)
     } catch (err) {

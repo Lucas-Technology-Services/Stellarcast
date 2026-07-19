@@ -4,7 +4,7 @@ import {
   getEpisodeByToken,
   getEpisodeVideoUrl,
 } from "@/services/podcastService";
-import { getPresignedVideoUrl, parseObjectKey } from "@/services/minio_service";
+import { getPresignedPlaybackUrl, parseObjectKey } from "@/services/localstack_service";
 
 export async function GET(request, { params }) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
       const storedValue = await getEpisodeVideoUrl(episodeId);
       const objectKey = parseObjectKey(storedValue);
       if (objectKey.includes("/") || objectKey.includes("://")) {
-        videoUrl = await getPresignedVideoUrl(objectKey);
+        videoUrl = await getPresignedPlaybackUrl(objectKey);
       }
     } catch {
       // no video uploaded yet

@@ -137,17 +137,83 @@ export async function getEpisode(episodeToken: string): Promise<Episode> {
   return apiGet<Episode>(`/api/episodes/${encodeURIComponent(episodeToken)}`, token)
 }
 
+const CHUNK_SIZE = 5 * 1024 * 1024
+const UPLOAD_CONCURRENCY = 1
+
+async function uploadPart(
+  url: string,
+  chunk: Blob,
+  partNumber: number,
+  attempt: number = 1,
+): Promise<{ PartNumber: number; ETag: string }> {
+  const res = await fetch(url, { method: 'PUT', body: chunk })
+  if (!res.ok) {
+    if (attempt < 3) {
+      const delay = Math.min(5000 * Math.pow(2, attempt - 1), 20000)
+      await new Promise((r) => setTimeout(r, delay))
+      return uploadPart(url, chunk, partNumber, attempt + 1)
+    }
+    throw new Error(`Failed to upload part ${partNumber} after 3 attempts`)
+  }
+  const etag = res.headers.get('ETag')
+  if (!etag) {
+    throw new Error(`Missing ETag for part ${partNumber}`)
+  }
+  return { PartNumber: partNumber, ETag: etag }
+}
+
 export async function uploadEpisodeVideo(
   episodeToken: string,
   videoFile: File,
 ): Promise<UploadResponse> {
   const token = await getMachineToken()
-  const formData = new FormData()
-  formData.append('video', videoFile)
-  return apiUploadFile<UploadResponse>(
+  const ext = videoFile.name.split('.').pop() || 'mp4'
+  const totalSize = videoFile.size
+  const partCount = Math.ceil(totalSize / CHUNK_SIZE)
+
+  const { uploadId, key, presignedUrls } = await apiPost<{
+    uploadId: string
+    key: string
+    presignedUrls: string[]
+    partCount: number
+  }>(
     `/api/episodes/${encodeURIComponent(episodeToken)}/upload`,
-    formData,
+    {
+      fileName: videoFile.name,
+      contentType: videoFile.type || `video/${ext}`,
+      partCount,
+    },
     token,
+  )
+
+  const parts: { PartNumber: number; ETag: string }[] = []
+
+  for (let i = 0; i < partCount; i += UPLOAD_CONCURRENCY) {
+    const batch = Array.from(
+      { length: Math.min(UPLOAD_CONCURRENCY, partCount - i) },
+      (_, j) => {
+        const partIndex = i + j
+        const start = partIndex * CHUNK_SIZE
+        const end = Math.min(start + CHUNK_SIZE, totalSize)
+        return uploadPart(
+          presignedUrls[partIndex],
+          videoFile.slice(start, end),
+          partIndex + 1,
+        )
+      },
+    )
+    const results = await Promise.all(batch)
+    parts.push(...results)
+  }
+
+  parts.sort((a, b) => a.PartNumber - b.PartNumber)
+
+  _machineToken = null
+  const confirmToken = await getMachineToken()
+  return apiPost<UploadResponse>(
+    `/api/episodes/${encodeURIComponent(episodeToken)}/confirm`,
+    { key, uploadId, parts },
+    confirmToken,
   )
 }
 

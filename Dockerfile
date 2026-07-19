@@ -34,10 +34,7 @@ ENV CLIENT_ID_1="" \
     RABBITMQ_VHOST="" \
     SWAGGER_PASSWORD="" \
     SWAGGER_USER="" \
-    MINIO_ENDPOINT="" \
-    MINIO_ACCESS_KEY="" \
-    MINIO_SECRET_KEY="" \
-    MINIO_BUCKET_NAME="" 
+    LOCALSTACK_ENDPOINT="" 
 
 
 RUN npm run build
