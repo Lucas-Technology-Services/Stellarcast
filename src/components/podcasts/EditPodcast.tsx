@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, CirclePlay, ChevronDown } from 'lucide-react'
@@ -9,6 +8,7 @@ import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
 import { getPodcastByTitle, updatePodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
 import { ApiError } from '@/lib/api-client'
+import ThumbnailCropper, { INSTAGRAM_RATIOS } from '@/components/episodes/ThumbnailCropper'
 import {
   PageWrapper,
   BackgroundOverlay,
@@ -54,6 +54,7 @@ export default function EditPodcast() {
   const [podcastLoading, setPodcastLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [croppingCover, setCroppingCover] = useState<{ file?: File; imageUrl?: string } | null>(null)
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -126,11 +127,26 @@ export default function EditPodcast() {
     setForm((prev) => ({ ...prev, coverUrl: url, coverPreview: url || null, coverFile: null }))
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const objectUrl = URL.createObjectURL(file)
-    setForm((prev) => ({ ...prev, coverPreview: objectUrl, coverUrl: '', coverFile: file }))
+    setCroppingCover({ file })
+  }
+
+  function handleCoverCropFromPreview() {
+    if (!form.coverPreview) return
+    setCroppingCover({ imageUrl: form.coverPreview })
+  }
+
+  function handleCoverCropComplete(blob: Blob) {
+    const cropped = new File([blob], 'cover.jpg', { type: 'image/jpeg' })
+    const objectUrl = URL.createObjectURL(cropped)
+    setForm((prev) => ({ ...prev, coverPreview: objectUrl, coverUrl: '', coverFile: cropped }))
+    setCroppingCover(null)
+  }
+
+  function handleCoverCropCancel() {
+    setCroppingCover(null)
   }
 
   async function savePodcast() {
@@ -304,48 +320,65 @@ export default function EditPodcast() {
 
           <FieldGroup>
             <Label>Cover Image</Label>
-            <CoverImageRow>
-              <CoverImageLeft>
-                <Label htmlFor="cover-url" style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>
-                  Cover Image URL
-                </Label>
-                <CoverImageInputRow>
-                  <Input
-                    id="cover-url"
-                    type="url"
-                    placeholder="https://..."
-                    value={form.coverUrl}
-                    onChange={handleCoverUrlChange}
-                    style={{ flex: 1 }}
-                  />
-                  <UploadButton type="button" onClick={() => fileInputRef.current?.click()}>
-                    Upload Image
-                  </UploadButton>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleFileUpload}
-                  />
-                </CoverImageInputRow>
-              </CoverImageLeft>
+            {croppingCover ? (
+              <ThumbnailCropper
+                file={croppingCover.file}
+                imageUrl={croppingCover.imageUrl}
+                onCrop={handleCoverCropComplete}
+                onCancel={handleCoverCropCancel}
+                aspectRatios={INSTAGRAM_RATIOS}
+                defaultRatioIndex={0}
+              />
+            ) : (
+              <CoverImageRow>
+                <CoverImageLeft>
+                  <Label htmlFor="cover-url" style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>
+                    Cover Image URL
+                  </Label>
+                  <CoverImageInputRow>
+                    <Input
+                      id="cover-url"
+                      type="url"
+                      placeholder="https://..."
+                      value={form.coverUrl}
+                      onChange={handleCoverUrlChange}
+                      style={{ flex: 1 }}
+                    />
+                    <UploadButton type="button" onClick={() => fileInputRef.current?.click()}>
+                      Upload Image
+                    </UploadButton>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleFileSelected}
+                    />
+                  </CoverImageInputRow>
+                </CoverImageLeft>
 
-              <CoverPreview>
-                {form.coverPreview ? (
-                  <Image
-                    src={form.coverPreview}
-                    alt="Podcast cover preview"
-                    width={120}
-                    height={120}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                    unoptimized
-                  />
-                ) : (
-                  <CoverPreviewPlaceholder>No image</CoverPreviewPlaceholder>
-                )}
-              </CoverPreview>
-            </CoverImageRow>
+                <CoverPreview
+                  onClick={form.coverPreview ? handleCoverCropFromPreview : undefined}
+                  style={form.coverPreview ? { cursor: 'pointer' } : undefined}
+                  title={form.coverPreview ? 'Click to crop cover image' : undefined}
+                >
+                  {form.coverPreview ? (
+                    <img
+                      key={form.coverPreview}
+                      src={form.coverPreview}
+                      alt="Podcast cover preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: form.coverFile ? 'contain' : 'cover',
+                      }}
+                    />
+                  ) : (
+                    <CoverPreviewPlaceholder>No image</CoverPreviewPlaceholder>
+                  )}
+                </CoverPreview>
+              </CoverImageRow>
+            )}
           </FieldGroup>
 
           <ActionRow>

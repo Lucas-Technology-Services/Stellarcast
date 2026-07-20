@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Plus, Clock, Film, Pencil, Trash2, X, Check, Play } from 'lucide-react'
+import { ArrowLeft, Plus, Clock, Film, Pencil, Trash2, X, Check, Play, Image } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
 import {
@@ -11,9 +11,11 @@ import {
   getPodcastByTitle,
   updateEpisode,
   deleteEpisode,
+  uploadEpisodeThumbnail,
   type Episode,
   type Podcast,
 } from '@/lib/api'
+import ThumbnailCropper, { INSTAGRAM_RATIOS } from '@/components/episodes/ThumbnailCropper'
 import {
   Wrapper,
   Header,
@@ -56,6 +58,10 @@ export default function EpisodeList() {
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editDuration, setEditDuration] = useState('')
+  const [croppingEpisode, setCroppingEpisode] = useState<Episode | null>(null)
+  const [croppingNewFile, setCroppingNewFile] = useState<File | null>(null)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const thumbFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isLoading && !token) {
@@ -130,6 +136,32 @@ export default function EpisodeList() {
     } catch {
       // keep confirmation on error
     }
+  }
+
+  function startThumbnailCrop(ep: Episode) {
+    setCroppingEpisode(ep)
+    setCroppingNewFile(null)
+  }
+
+  async function handleThumbnailCropComplete(blob: Blob) {
+    if (!token || !croppingEpisode) return
+    setUploadingThumbnail(true)
+    try {
+      const croppedFile = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' })
+      const updated = await uploadEpisodeThumbnail(croppingEpisode.masked_video_token, croppedFile)
+      setEpisodes((prev) => prev.map((e) => (e.id === croppingEpisode.id ? { ...e, ...updated } : e)))
+      setCroppingEpisode(null)
+      setCroppingNewFile(null)
+    } catch {
+      // keep modal open on error
+    } finally {
+      setUploadingThumbnail(false)
+    }
+  }
+
+  function handleThumbnailCropCancel() {
+    setCroppingEpisode(null)
+    setCroppingNewFile(null)
   }
 
   if (isLoading || !token) {
@@ -323,11 +355,162 @@ export default function EpisodeList() {
                         Upload Video
                       </Link>
                     )}
+                    <IconButton onClick={() => startThumbnailCrop(ep)} title="Crop Thumbnail">
+                      <Image size={14} />
+                      Thumbnail
+                    </IconButton>
                   </ActionsRow>
                 </>
               )}
             </EpisodeCard>
           ))
+        )}
+
+        {croppingEpisode && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(0,0,0,0.75)',
+              backdropFilter: 'blur(4px)',
+              padding: 20,
+              overflowY: 'auto',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleThumbnailCropCancel()
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 680,
+                background: '#0d0d2b',
+                border: '1px solid rgba(124,58,237,0.25)',
+                borderRadius: 20,
+                padding: '28px 24px',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 20,
+                }}
+              >
+                <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: 0 }}>
+                  Edit Thumbnail — {croppingEpisode.title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleThumbnailCropCancel}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'rgba(100,116,139,0.2)',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <input
+                ref={thumbFileRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) setCroppingNewFile(f)
+                  e.target.value = ''
+                }}
+              />
+
+              {!croppingNewFile && !croppingEpisode.thumbnail_url && (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <p style={{ color: '#94a3b8', marginBottom: 16, fontSize: 14 }}>
+                    No thumbnail yet. Choose an image to crop.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => thumbFileRef.current?.click()}
+                    style={{
+                      padding: '12px 24px',
+                      background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                      border: 'none',
+                      borderRadius: 10,
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Select Image
+                  </button>
+                </div>
+              )}
+
+              {(croppingNewFile || croppingEpisode.thumbnail_url) && (
+                <>
+                  {!croppingNewFile && (
+                    <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => thumbFileRef.current?.click()}
+                        style={{
+                          padding: '8px 18px',
+                          background: 'rgba(124,58,237,0.12)',
+                          border: '1px solid rgba(124,58,237,0.3)',
+                          borderRadius: 8,
+                          color: '#c4b5fd',
+                          fontSize: 13,
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Choose a different image
+                      </button>
+                    </div>
+                  )}
+
+                  <ThumbnailCropper
+                    file={croppingNewFile || undefined}
+                    imageUrl={!croppingNewFile ? croppingEpisode.thumbnail_url : undefined}
+                    onCrop={handleThumbnailCropComplete}
+                    onCancel={handleThumbnailCropCancel}
+                    aspectRatios={INSTAGRAM_RATIOS}
+                    defaultRatioIndex={2}
+                  />
+
+                  {uploadingThumbnail && (
+                    <p
+                      style={{
+                        textAlign: 'center',
+                        color: '#a78bfa',
+                        fontSize: 13,
+                        marginTop: 12,
+                      }}
+                    >
+                      Uploading thumbnail...
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         )}
       </Content>
     </Wrapper>

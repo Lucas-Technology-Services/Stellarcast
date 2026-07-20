@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Image } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
 import { createEpisode, uploadEpisodeThumbnail, uploadEpisodeVideo, createFeed } from '@/lib/api'
+import ThumbnailCropper from '@/components/episodes/ThumbnailCropper'
 import {
   Wrapper,
   Header,
@@ -33,9 +34,22 @@ export default function CreateEpisode() {
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [croppingImage, setCroppingImage] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  function handleCropComplete(blob: Blob) {
+    const cropped = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' })
+    setThumbnailFile(cropped)
+    setThumbnailPreview(URL.createObjectURL(cropped))
+    setCroppingImage(null)
+  }
+
+  function handleCropCancel() {
+    setCroppingImage(null)
+  }
 
   const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024
 
@@ -154,13 +168,94 @@ export default function CreateEpisode() {
 
           <FieldGroup>
             <Label htmlFor="ep-thumb">Thumbnail Image</Label>
-            <Input
-              id="ep-thumb"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
-              style={{ padding: 8 }}
-            />
+            {croppingImage ? (
+              <ThumbnailCropper
+                file={croppingImage}
+                onCrop={handleCropComplete}
+                onCancel={handleCropCancel}
+              />
+            ) : (
+              <div>
+                {thumbnailPreview && (
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      maxWidth: 320,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      marginBottom: 10,
+                      border: '2px solid rgba(124,58,237,0.3)',
+                    }}
+                  >
+                    <img
+                      src={thumbnailPreview}
+                      alt="Thumbnail preview"
+                      style={{ width: '100%', display: 'block', aspectRatio: '16/9', objectFit: 'cover' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbnailFile(null)
+                        setThumbnailPreview(null)
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: 'rgba(0,0,0,0.6)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 14,
+                      }}
+                      aria-label="Remove thumbnail"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <label
+                  htmlFor="ep-thumb"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 18px',
+                    background: 'rgba(124,58,237,0.12)',
+                    border: '1px solid rgba(124,58,237,0.3)',
+                    borderRadius: 10,
+                    color: '#c4b5fd',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(124,58,237,0.2)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(124,58,237,0.12)')}
+                >
+                  <Image size={16} />
+                  {thumbnailFile ? 'Change Thumbnail' : 'Select Thumbnail'}
+                </label>
+                <input
+                  id="ep-thumb"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) setCroppingImage(file)
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+            )}
           </FieldGroup>
 
           <FieldGroup>
