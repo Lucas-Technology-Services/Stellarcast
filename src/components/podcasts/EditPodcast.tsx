@@ -2,11 +2,11 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { CirclePlay, ChevronDown } from 'lucide-react'
+import { useRouter, useParams } from 'next/navigation'
+import { ArrowLeft, CirclePlay, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import UserMenu from '@/components/UserMenu'
-import { createPodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
+import { getPodcastByTitle, updatePodcast, uploadPodcastCover, fetchCategories, type PodcastCategory } from '@/lib/api'
 import { ApiError } from '@/lib/api-client'
 import ThumbnailCropper, { INSTAGRAM_RATIOS } from '@/components/episodes/ThumbnailCropper'
 import {
@@ -40,17 +40,10 @@ import {
   PublishButton,
 } from './styles'
 
-interface FormState {
-  title: string
-  description: string
-  category: string
-  coverUrl: string
-  coverPreview: string | null
-  coverFile: File | null
-}
-
-export default function CreatePodcast() {
+export default function EditPodcast() {
   const router = useRouter()
+  const params = useParams()
+  const podcastTitle = typeof params.title === 'string' ? decodeURIComponent(params.title) : ''
   const { token, user, isLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -58,16 +51,17 @@ export default function CreatePodcast() {
   const [categories, setCategories] = useState<PodcastCategory[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesFailed, setCategoriesFailed] = useState(false)
+  const [podcastLoading, setPodcastLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [croppingCover, setCroppingCover] = useState<{ file?: File; imageUrl?: string } | null>(null)
-  const [form, setForm] = useState<FormState>({
+  const [form, setForm] = useState({
     title: '',
     description: '',
     category: '',
     coverUrl: '',
-    coverPreview: null,
-    coverFile: null,
+    coverPreview: null as string | null,
+    coverFile: null as File | null,
   })
 
   useEffect(() => {
@@ -80,16 +74,38 @@ export default function CreatePodcast() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      if (!token || !podcastTitle) return
+      try {
+        const podcast = await getPodcastByTitle(podcastTitle)
+        if (cancelled) return
+        setForm({
+          title: podcast.title,
+          description: podcast.description || '',
+          category: podcast.category?.name || '',
+          coverUrl: podcast.cover_image_url || '',
+          coverPreview: podcast.cover_image_url || null,
+          coverFile: null,
+        })
+        setPodcastLoading(false)
+      } catch {
+        if (!cancelled) {
+          setError('Podcast not found')
+          setPodcastLoading(false)
+        }
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [token, podcastTitle])
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
       try {
         const cats = await fetchCategories()
         if (cancelled) return
         setCategories(cats)
         setCategoriesLoading(false)
-        if (cats.length > 0) {
-          setForm((prev) => prev.category ? prev : { ...prev, category: cats[0].name })
-        } else {
-          setCategoriesFailed(true)
-        }
       } catch {
         if (!cancelled) {
           setCategories([])
@@ -140,14 +156,9 @@ export default function CreatePodcast() {
       setError('Podcast title is required.')
       return
     }
-    if (!form.category.trim()) {
-      setError('Please select or enter a category.')
-      return
-    }
     setSaving(true)
     try {
-      const podcast = await createPodcast({
-        email: user!.email,
+      const updated = await updatePodcast(podcastTitle, {
         title: form.title,
         description: form.description || undefined,
         category_name: form.category || undefined,
@@ -155,27 +166,19 @@ export default function CreatePodcast() {
       })
 
       if (form.coverFile) {
-        await uploadPodcastCover(podcast.title, form.coverFile)
+        await uploadPodcastCover(updated.title, form.coverFile)
       }
 
-      router.push(`/podcasts/${encodeURIComponent(podcast.title)}/episodes`)
+      router.push(`/podcasts/${encodeURIComponent(updated.title)}/episodes`)
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         router.push('/login')
         return
       }
-      setError(err instanceof Error ? err.message : 'Failed to save podcast')
+      setError(err instanceof Error ? err.message : 'Failed to update podcast')
     } finally {
       setSaving(false)
     }
-  }
-
-  function handleSaveAsDraft() {
-    savePodcast()
-  }
-
-  function handlePublish() {
-    savePodcast()
   }
 
   const allCategories = showExtra ? categories : categories.slice(0, 6)
@@ -185,6 +188,16 @@ export default function CreatePodcast() {
       <PageWrapper>
         <PageContent style={{ justifyContent: 'center', minHeight: '60vh' }}>
           <p style={{ color: '#94a3b8' }}>Loading...</p>
+        </PageContent>
+      </PageWrapper>
+    )
+  }
+
+  if (podcastLoading) {
+    return (
+      <PageWrapper>
+        <PageContent style={{ justifyContent: 'center', minHeight: '60vh' }}>
+          <p style={{ color: '#94a3b8' }}>Loading podcast...</p>
         </PageContent>
       </PageWrapper>
     )
@@ -212,8 +225,16 @@ export default function CreatePodcast() {
           <TitleIconWrapper>
             <CirclePlay size={26} />
           </TitleIconWrapper>
-          <PageTitle>Create New Podcast</PageTitle>
+          <PageTitle>Edit Podcast</PageTitle>
         </TitleSection>
+
+        <Link
+          href={`/podcasts/${encodeURIComponent(podcastTitle)}/episodes`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#a78bfa', fontSize: 13, textDecoration: 'none', marginBottom: 16, alignSelf: 'flex-start' }}
+        >
+          <ArrowLeft size={14} />
+          Back to Episodes
+        </Link>
 
         {error && (
           <div
@@ -361,12 +382,9 @@ export default function CreatePodcast() {
           </FieldGroup>
 
           <ActionRow>
-            <DraftButton type="button" onClick={handleSaveAsDraft} disabled={saving}>
-              {saving ? 'Saving...' : 'Save as Draft'}
+            <DraftButton type="button" onClick={savePodcast} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
             </DraftButton>
-            <PublishButton type="button" onClick={handlePublish} disabled={saving}>
-              {saving ? 'Saving...' : 'Publish Podcast'}
-            </PublishButton>
           </ActionRow>
         </FormCard>
       </PageContent>
