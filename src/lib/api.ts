@@ -100,6 +100,18 @@ export async function createPodcast(
   return apiPost<Podcast>('/api/podcasts', data, token)
 }
 
+export async function updatePodcast(
+  podcastTitle: string,
+  data: { title: string; description?: string; category_name?: string; cover_image_url?: string },
+): Promise<Podcast> {
+  const token = await getMachineToken()
+  return apiPut<Podcast>(
+    `/api/podcasts/${encodeURIComponent(podcastTitle)}`,
+    data,
+    token,
+  )
+}
+
 export async function listMyPodcasts(_token?: string): Promise<Podcast[]> {
   const machineToken = await getMachineToken()
   const userData = getUserData()

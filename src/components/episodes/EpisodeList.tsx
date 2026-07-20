@@ -164,25 +164,45 @@ export default function EpisodeList() {
           {episodes.length} episode{episodes.length !== 1 ? 's' : ''}
         </PageSubtitle>
 
-        <Link
-          href={`/podcasts/${encodeURIComponent(title)}/episodes/create`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 24px',
-            background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-            borderRadius: 12,
-            color: '#ffffff',
-            fontWeight: 600,
-            fontSize: 14,
-            textDecoration: 'none',
-            marginBottom: 24,
-          }}
-        >
-          <Plus size={18} />
-          New Episode
-        </Link>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+          <Link
+            href={`/podcasts/${encodeURIComponent(title)}/episodes/create`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+              borderRadius: 12,
+              color: '#ffffff',
+              fontWeight: 600,
+              fontSize: 14,
+              textDecoration: 'none',
+            }}
+          >
+            <Plus size={18} />
+            New Episode
+          </Link>
+          <Link
+            href={`/podcasts/${encodeURIComponent(title)}/edit`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 24px',
+              background: 'rgba(124,58,237,0.15)',
+              border: '1px solid rgba(124,58,237,0.3)',
+              borderRadius: 12,
+              color: '#c4b5fd',
+              fontWeight: 600,
+              fontSize: 14,
+              textDecoration: 'none',
+            }}
+          >
+            <Pencil size={18} />
+            Edit Podcast
+          </Link>
+        </div>
 
         {loading ? (
           <p style={{ color: '#94a3b8' }}>Loading episodes...</p>
