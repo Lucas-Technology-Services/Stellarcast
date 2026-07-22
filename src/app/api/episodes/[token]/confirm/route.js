@@ -51,7 +51,7 @@ export async function POST(request, { params }) {
 
     const playerToken = generatePlayerToken(key);
     const baseUrl =
-      process.env.PLATFORM_BASE_URL || "https://stellarcast-umber.vercel.app";
+      process.env.PLATFORM_BASE_URL || "https://rotation-other-cant-gates.trycloudflare.com/";
     const playerUrl = `${baseUrl}/player/${playerToken}`;
 
     return NextResponse.json(

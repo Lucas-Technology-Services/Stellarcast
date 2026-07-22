@@ -194,7 +194,7 @@ export function buildRssFeed(
   episodes: EpisodeFeedData[],
 ): string {
   const baseUrl =
-    process.env.PLATFORM_BASE_URL || 'https://stellarcast-umber.vercel.app'
+    process.env.PLATFORM_BASE_URL || 'https://rotation-other-cant-gates.trycloudflare.com/'
   const buildDate = new Date().toUTCString()
 
   const episodeItems = episodes
